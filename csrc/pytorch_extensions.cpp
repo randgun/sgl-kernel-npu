@@ -43,6 +43,8 @@ TORCH_LIBRARY_FRAGMENT(npu, m)
                           "Tensor(a!) q_out0, Tensor(b!) kv_cache_out0, Tensor(c!) q_out1, Tensor(d!) kv_cache_out1) "
                           "-> (Tensor(a!), Tensor(b!), Tensor(c!), Tensor(d!))");
 
+    m.def("pp_matmul_einsum(Tensor tensor_a, Tensor tensor_b, Tensor(a!) tensor_c, "
+            "str? format_mode=None, str? quant_mode=None) -> bool");
 }
 }  // namespace
 
@@ -56,5 +58,6 @@ TORCH_LIBRARY_IMPL(npu, PrivateUse1, m)
     m.impl("alloc_extend", TORCH_FN(sglang::npu_kernel::alloc_extend));
     m.impl("assign_cache_op", TORCH_FN(sglang::npu_kernel::assign_cache_op));
     m.impl("mla_preprocess", TORCH_FN(sglang::npu_kernel::mla_preprocess));
+    m.impl("pp_matmul_einsum", TORCH_FN(sglang::npu_kernel::pp_matmul_einsum));
 }
 }  // namespace
