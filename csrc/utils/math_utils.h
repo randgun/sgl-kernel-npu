@@ -1,12 +1,14 @@
 #ifndef HOST_MATH_UTILS_H
 #define HOST_MATH_UTILS_H
 #include <cstdint>
+#include <limits>
 
 namespace host_utils{
-inline uint32_t CeilDiv(const uint32_t dividend, const uint32_t divisor)
+template <typename T>
+inline T CeilDiv(const T dividend, const T divisor)
 {
     if (divisor == 0) {
-        return UINT32_MAX;
+        return std::numeric_limits<T>::max();
     }
     return (dividend + divisor - 1) / divisor;
 }

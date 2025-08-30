@@ -39,7 +39,8 @@ std::tuple<at::Tensor &, at::Tensor &, at::Tensor &, at::Tensor &> mla_preproces
     at::Tensor &kv_cache_out0, at::Tensor &q_out1, at::Tensor &kv_cache_out1);
 
 bool pp_matmul_einsum(const at::Tensor &tensor_a, const at::Tensor &tensor_b, at::Tensor &tensor_c,
-    c10::optional<c10::string_view> format_mode, c10::optional<c10::string_view> quant_mode)
+    c10::optional<c10::string_view> format_mode, c10::optional<c10::string_view> quant_mode);
+
 }  // namespace npu_kernel
 
 }  // namespace sglang

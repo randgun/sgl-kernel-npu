@@ -17,7 +17,7 @@ struct MatMul {
         PER_CHANNEL_ASYMM,
         PER_TOKEN_SYMM
     };
-}
+};
 
 enum class TensorDType : uint32_t {
     TENSOR_DTYPE_FLOAT16 = 0,
@@ -32,14 +32,14 @@ enum class TensorFormat : uint32_t {
 struct MatMulInfo {
     uint32_t batchSize{0};
     uint32_t m{0}; // 实际输入的 m
-    uint32_t n{0}; // 实际输入的 n
     uint32_t k{0}; // 实际输入的 k
-    TensorDType dtypeA{TENSOR_DTYPE_FLOAT16};
-    TensorDType dtypeB{TENSOR_DTYPE_FLOAT16};
-    TensorDType dtypeC{TENSOR_DTYPE_FLOAT16};
-    TensorFormat formatA{TENSOR_FORMAT_ND};
-    TensorFormat formatB{TENSOR_FORMAT_ND};
-    TensorFormat formatC{TENSOR_FORMAT_ND};
+    uint32_t n{0}; // 实际输入的 n
+    TensorDType dtypeA{TensorDType::TENSOR_DTYPE_FLOAT16};
+    TensorDType dtypeB{TensorDType::TENSOR_DTYPE_FLOAT16};
+    TensorDType dtypeC{TensorDType::TENSOR_DTYPE_FLOAT16};
+    TensorFormat formatA{TensorFormat::TENSOR_FORMAT_ND};
+    TensorFormat formatB{TensorFormat::TENSOR_FORMAT_ND};
+    TensorFormat formatC{TensorFormat::TENSOR_FORMAT_ND};
     MatMul::MatMulType mmType{MatMul::MatMulType::MATMUL_DEFAULT};
     bool transA{0};   // false: 0, true: 1
     bool transB{0};   // false: 0, true: 1
@@ -70,18 +70,7 @@ struct HardwareInfo {
     uint32_t hbmBandWidth{0};
     uint32_t l2BandWidth{0};
 
-    HardwareInfo()
-    {
-        auto platform = PlatformInfo::Instance();
-        coreNum = platform.GetCoreNum(CoreType::CORE_TYPE_CUBE);
-        l2Size = platform.GetL2Size();
-        l1Size = platform.GetL1Size();
-        l0aSize = platform.GetL0ASize();
-        l0bSize = platform.GetL0BSize();
-        l0cSize = platform.GetL0CSize();
-        hbmBandWidth = 1;
-        l2BandWidth = 5; // 5x faster than hbm.
-    }
+    HardwareInfo();
 };
 
 #pragma pack(push, 1)
@@ -105,5 +94,8 @@ struct PpMatmulTilingData {
     uint32_t End(const MatMulInfo &mmInfo);
 };
 #pragma pack(pop)
+
+void GetPpMatmulTiling(const MatMulInfo &mmInfo, const HardwareInfo &hwInfo, uint32_t &blockDim,
+                        PpMatmulTilingData &tilingData);
 }
 #endif

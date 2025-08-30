@@ -6,6 +6,7 @@
 #include "defines.h"
 #include "torch_helper.h"
 #include "aclrtlaunch_pp_matmul_einsum.h"
+#include "common_tiling.h"
 
 namespace sglang {
 namespace npu_kernel {
@@ -22,6 +23,11 @@ std::unordered_map<c10::string_view, uint16_t> formatModeMap = {
     {"nz", 1},
 };
 
+std::unordered_map<c10::ScalarType, TensorDType> atType2tensorDType = {
+    {at::ScalarType::BFloat16, TensorDType::TENSOR_DTYPE_BF16},
+    {at::ScalarType::Half, TensorDType::TENSOR_DTYPE_FLOAT16}
+};
+
 template<typename MapType>
 inline int GetModeVal(const MapType& mode_map,
                        c10::optional<c10::string_view> mode_opt,
@@ -31,7 +37,7 @@ inline int GetModeVal(const MapType& mode_map,
     c10::string_view mode_str = mode_opt.value_or(default_mode);
     auto it = mode_map.find(mode_str);
     // if input mode is unsupported, use default value
-    OP_CHECK(it != mode_map.end(), "Unsupported mode value" + mode_str, 0);
+    OP_CHECK(it != mode_map.end(), c10::str("Unsupported mode value ", mode_str), return 0);
     return it->second;
 }
 
@@ -44,14 +50,15 @@ HOST_API bool pp_matmul_einsum(const at::Tensor &tensor_a, const at::Tensor &ten
     uint32_t n;
     uint32_t block_dim;
     HardwareInfo hwInfo;
-    std::map<TensorDType, float> dTypeMap = {
-        {TENSOR_DTYPE_INT8, 1.0}, {TENSOR_DTYPE_FLOAT16, 2.0}, {TENSOR_DTYPE_BF16, 2.0}, {TENSOR_DTYPE_FLOAT, 4.0}};
+    std::map<c10::ScalarType, float> dTypeMap = {
+        {at::ScalarType::Half, 2.0},
+        {at::ScalarType::BFloat16, 2.0}};
 
     at::ScalarType aType = tensor_a.scalar_type();
     at::ScalarType bType = tensor_b.scalar_type();
     at::ScalarType cType = tensor_c.scalar_type();
     OP_CHECK(aType == bType && bType == cType, "tensor type is not the same", return false);
-    OP_CHECK(aType != at::ScalarType::BFloat16 && aType != at::ScalarType::Half, "tensor type only support half or bf16", return false);
+    OP_CHECK((aType == at::ScalarType::BFloat16) || (aType == at::ScalarType::Half), "tensor type only support half or bf16", return false);
 
     TensorFormat formatMode = static_cast<TensorFormat>(GetModeVal(formatModeMap, format_mode, "nd", "format_mode"));
     MatMul::QuantMode quantMode = static_cast<MatMul::QuantMode>(GetModeVal(quantModeMap, quant_mode, "per_channel_symm", "quant_mode"));
@@ -69,22 +76,25 @@ HOST_API bool pp_matmul_einsum(const at::Tensor &tensor_a, const at::Tensor &ten
     OP_CHECK(tensorAShape[1] == tensorBShape[0], "tensor shape is wrong", return false);
 
     OpShape opShape = {
-        .batchSize = tensorAShape[1],
-        .m = tensorAShape[0],
-        .k = tensorAShape[2],
+        .batchSize = static_cast<uint32_t>(tensorAShape[1]),
+        .m = static_cast<uint32_t>(tensorAShape[0]),
+        .k = static_cast<uint32_t>(tensorAShape[2]),
         .n = n
     };
+
     PpMatmulTilingData matmulTilingData = {
         .opShape = opShape,
     }
+
+    auto dType = atType2tensorDType[aType];
     MatMulInfo mmInfo = {
         .batchSize = opShape.batchSize,
         .m = opShape.m,
         .k = opShape.k,
         .n = opShape.n,
-        .dtypeA = aType,
-        .dtypeB = bType,
-        .dtypeC = cType,
+        .dtypeA = dType,
+        .dtypeB = dType,
+        .dtypeC = dType,
         .formatB = formatMode,
         .mmType = MatMul::MatMulType::MATMUL_EIN_SUM,
         .inDtype = dTypeMap[aType],
@@ -92,7 +102,7 @@ HOST_API bool pp_matmul_einsum(const at::Tensor &tensor_a, const at::Tensor &ten
         .quantMode = quantMode
     };
     GetPpMatmulTiling(mmInfo, hwInfo, block_dim, matmulTilingData);
-    PpMatmulTilingCheck(matmulTilingData);
+    host_utils::PpMatmulTilingCheck(matmulTilingData);
 
     at::Tensor buffer = at::from_blob((uint8_t *)&matmulTilingData, sizeof(PpMatmulTilingData), at::kByte);
     at::Tensor tiling = TorchNpuHepler::CopyTensorHostToDevice(buffer);

@@ -10,10 +10,13 @@ FILE(GLOB OP_SRCS
     ${PROJECT_OP_SRC_BASE}/assign_cache_op/op_host/assign_cache.cpp
     ${PROJECT_OP_SRC_BASE}/mla_preprocess/op_host/mla_preprocess.cpp
     ${PROJECT_OP_SRC_BASE}/pp_matmul_einsum/op_host/pp_matmul_einsum.cpp
+    ${PROJECT_OP_SRC_BASE}/pp_matmul_einsum/op_host/tiling/tiling_data.cpp
     )
 
 # set the so name
 set(OP_PLUGIN_NAME sgl_kernel_npu)
+
+include_directories(${PROJECT_OP_SRC_BASE}/mla_preprocess/op_kernel/kernel)
 
 # kernel side files without workspace
 ascendc_library(no_workspace_kernel STATIC

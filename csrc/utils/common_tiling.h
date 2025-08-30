@@ -11,14 +11,16 @@
 #ifndef COMMMON_TILING_H
 #define COMMMON_TILING_H
 
+#include <iostream>
 #include <cmath>
 #include "math_utils.h"
-#include "pp_matmul_einsum/host/tiling_data.h"
+#include "../pp_matmul_einsum/op_host/tiling/tiling_data.h"
+#include "tiling/platform/platform_ascendc.h"
 
 namespace host_utils {
 #define OP_CHECK(expression, error_msg, action) \
 do { \
-    if (!expression) { \
+    if (!(expression)) { \
         std::cerr << "[ERROR] " << (error_msg) << " [" << __FILE__ << ":" << __LINE__ << "]" << std::endl; \
         action; \
     } \
@@ -41,23 +43,76 @@ constexpr uint32_t L0AB_PINGPONG_BUFFER_LEN_FP16 = 131072;     // 128 KB
 constexpr uint32_t L1AB_PINGPONG_BUFFER_LEN_INT8_SPARSE = 160 * 1024;
 constexpr uint32_t UB_LIMIT_SIZE_910A = 128 * 1024;
 
-template <uint32_t DIV> inline __attribute__((always_inline)) uint32_t CeilDiv(uint32_t num)
+enum class PlatformType
 {
-    if (DIV == 0 || num + DIV - 1 < num) {
-        //MKI_LOG(ERROR) << "DIV == 0 or num + DIV - 1 < num";
-        return num;
-    }
-    return (num + DIV - 1) / DIV;
-}
+    ASCEND_310P,
+    ASCEND_910A,
+    ASCEND_910B,
+    ASCEND_910C,
+    PLATFORM_INVALID
+};
 
-inline __attribute__((always_inline)) uint32_t CeilDiv(uint32_t dividend, uint32_t divisor)
+struct PlatformInfo
 {
-    if (divisor == 0 || dividend + divisor - 1 < dividend) {
-        //MKI_LOG(ERROR) << "divisor is 0 or dividend + divisor - 1 < dividend";
-        return dividend;
+public:
+    static const PlatformInfo &Instance() {
+        static PlatformInfo platformInfo;
+        return platformInfo;
     }
-    return (dividend + divisor - 1) / divisor;
-}
+
+    PlatformType socType;
+    uint32_t coreNum;
+    uint32_t coreNumAic;
+    uint32_t coreNumAiv;
+    uint64_t ubSize;
+    uint64_t l1Size;
+    uint64_t l2Size;
+    uint64_t l0aSize;
+    uint64_t l0bSize;
+    uint64_t l0cSize;
+
+private:
+    PlatformInfo() {
+        auto ascendcPlatform = platform_ascendc::PlatformAscendCManager::GetInstance();
+        // TODO Hard coding set to 910_93xx, parse using aclrtGetSocName is better
+        socType = PlatformType::ASCEND_910C;
+        coreNum = ascendcPlatform->GetCoreNum();
+        coreNumAic = ascendcPlatform->GetCoreNumAic();
+        coreNumAiv = ascendcPlatform->GetCoreNumAiv();
+        ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
+        ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::L1, l1Size);
+        ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::L2, l2Size);
+        ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::L0_A, l0aSize);
+        ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::L0_B, l0bSize);
+        ascendcPlatform->GetCoreMemSize(platform_ascendc::CoreMemType::L0_C, l0cSize);
+    }
+
+    PlatformInfo(const PlatformInfo&) = delete;
+    PlatformInfo& operator=(const PlatformInfo&) = delete;
+    PlatformInfo(PlatformInfo&&) = delete;
+    PlatformInfo& operator=(PlatformInfo&&) = delete;
+};
+
+
+// template <uint32_t DIV> inline __attribute__((always_inline)) uint32_t CeilDiv(uint32_t num)
+// {
+//     if (DIV == 0 || num + DIV - 1 < num) {
+//         //MKI_LOG(ERROR) << "DIV == 0 or num + DIV - 1 < num";
+//         return num;
+//     }
+//     return (num + DIV - 1) / DIV;
+// }
+
+
+
+// inline __attribute__((always_inline)) uint32_t CeilDiv(uint32_t dividend, uint32_t divisor)
+// {
+//     if (divisor == 0 || dividend + divisor - 1 < dividend) {
+//         //MKI_LOG(ERROR) << "divisor is 0 or dividend + divisor - 1 < dividend";
+//         return dividend;
+//     }
+//     return (dividend + divisor - 1) / divisor;
+// }
 
 template <uint32_t RND> inline __attribute__((always_inline)) uint32_t Round(uint32_t num)
 {
@@ -141,7 +196,7 @@ void TilingFunc(OpShareType &opShape, TilingType &tilingParam, const HardwareTyp
     uint32_t priAxes = RoundUp<uint32_t>(PRI_FLAG ? opShape.m : opShape.n, ROUND_CONST_16);
     uint32_t axes = RoundUp<uint32_t>(PRI_FLAG ? opShape.n : opShape.m, roundBase);
     float axes0Max = static_cast<float>(AXES_ALIGN_SIZE) / mmInfo.inDtype;
-    auto platformType = PlatformInfo::Instance().GetPlatformType();
+    auto platformType = PlatformInfo::Instance().socType;
     if (mmInfo.isInt8 && (platformType == PlatformType::ASCEND_310P || platformType == PlatformType::ASCEND_910A)) {
         axes0Max /= CONST_2;
     }
@@ -168,7 +223,7 @@ void TilingFunc(OpShareType &opShape, TilingType &tilingParam, const HardwareTyp
                 continue;
             }
             costMin = cost;
-            if constexpr (std::is_same<TilingType, PpMatmulTilingData>::value) {
+            if constexpr (std::is_same<TilingType, pp_matmul::PpMatmulTilingData>::value) {
                 tilingParam.SetBaseOp(hwInfor.coreNum, opShape.m0, opShape.n0, mmInfo);
             } else {
                 tilingParam.SetBaseOp(hwInfor.coreNum, opShape.m0, opShape.n0);
