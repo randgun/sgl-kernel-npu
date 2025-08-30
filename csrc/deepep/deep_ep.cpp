@@ -11,7 +11,6 @@
 namespace deep_ep {
 constexpr int PADDING_SIZE = 3;
 constexpr size_t HCOMM_NAME_LEN = 128;
-constexpr double SCALE_SIZE = 1.5;
 
 Buffer::Buffer(int64_t rank, int64_t num_ranks, int64_t num_nvl_bytes, int64_t num_rdma_bytes, bool low_latency_mode,
                std::string moe_all_to_all_group_name)
@@ -73,67 +72,30 @@ Buffer::get_dispatch_layout(const torch::Tensor& topk_idx, int num_experts,
     const int num_tokens = new_topk_idx.size(0);
     const int num_topk = new_topk_idx.size(1);
 
-    auto options_cpu = torch::TensorOptions().dtype(torch::kInt32).device(torch::kCPU);
-    auto num_tokens_per_expert_cpu = torch::zeros({num_experts}, options_cpu);
-    auto num_tokens_per_rank_cpu = torch::zeros({num_ranks}, options_cpu);
-    auto is_token_in_rank_cpu = torch::zeros({num_tokens, num_ranks}, torch::kBool);
+    auto device = new_topk_idx.device();
+    auto num_tokens_per_expert = at::zeros({num_experts}, at::dtype(at::kInt).device(device));
+    auto num_tokens_per_rank = at::zeros({num_ranks}, at::dtype(at::kInt).device(device));
+    auto is_token_in_rank = at::zeros({num_tokens, num_ranks}, at::dtype(at::kInt).device(device));
 
-    auto topk_cpu = new_topk_idx.to(torch::kCPU);
-    const int64_t* topk_data = topk_cpu.data_ptr<int64_t>();
-    int32_t* global_expert_acc = num_tokens_per_expert_cpu.data_ptr<int32_t>();
-    int32_t* global_rank_acc = num_tokens_per_rank_cpu.data_ptr<int32_t>();
-    bool* global_in_rank = is_token_in_rank_cpu.data_ptr<bool>();
+    EXEC_NPU_CMD(aclnnDispatchLayout,
+        new_topk_idx,
+        num_tokens,
+        num_ranks,
+        num_experts,
+        num_topk,
+        num_tokens_per_rank,
+        num_tokens_per_expert,
+        is_token_in_rank); 
 
     std::optional<torch::Tensor> num_tokens_per_rdma_rank = std::nullopt;
     std::optional<EventHandle> output_event = std::nullopt;
-
-    const int experts_per_rank = num_experts / num_ranks;
-
-    #pragma omp parallel
-    {
-        // Private buffer for each thread
-        std::vector<int32_t> local_expert_acc(num_experts, 0);
-        std::vector<int32_t> local_rank_acc(num_ranks, 0);
-        std::vector<uint8_t> local_in_rank(num_tokens * num_ranks, 0);
-
-        #pragma omp for nowait
-        for (int i = 0; i < num_tokens; ++i) {
-            std::vector<uint8_t> seen_rank(num_ranks, 0);
-            for (int j = 0; j < num_topk; ++j) {
-                int64_t expert_idx = topk_data[i * num_topk + j];
-                if (expert_idx >= 0) {
-                    local_expert_acc[expert_idx]++;
-                    int rank_id = expert_idx / experts_per_rank;
-                    if (!seen_rank[rank_id]) {
-                        local_rank_acc[rank_id]++;
-                        local_in_rank[i * num_ranks + rank_id] = 1;
-                        seen_rank[rank_id] = 1;
-                    }
-                }
-            }
-        }
-
-        #pragma omp critical
-        {
-            for (int i = 0; i < num_experts; ++i)
-                global_expert_acc[i] += local_expert_acc[i];
-            for (int i = 0; i < num_ranks; ++i)
-                global_rank_acc[i] += local_rank_acc[i];
-            for (int i = 0; i < num_tokens * num_ranks; ++i)
-                if (local_in_rank[i])
-                    global_in_rank[i] = true;
-        }
-    }
-
-    auto num_tokens_per_expert = num_tokens_per_expert_cpu.to(topk_idx.device());
-    auto num_tokens_per_rank = num_tokens_per_rank_cpu.to(topk_idx.device());
-    auto is_token_in_rank = is_token_in_rank_cpu.to(topk_idx.device());
+    auto is_token_in_rank_bool = is_token_in_rank.to(at::kBool);
 
     return std::make_tuple(
         num_tokens_per_rank,
         num_tokens_per_rdma_rank,
         num_tokens_per_expert,
-        is_token_in_rank,
+        is_token_in_rank_bool,
         output_event
     );
 }
@@ -216,26 +178,12 @@ Buffer::intranode_dispatch(const at::Tensor& x, const std::optional<at::Tensor>&
         scale_hidden_stride = static_cast<int>(x_scales->stride(1));
     }
 
-    auto options_cpu = torch::TensorOptions().dtype(torch::kInt32).device(torch::kCPU);
     int send_per_group = 3; // (send_to_expert_num, send_to_expert_offset, send_rank_tokens)
-    at::Tensor send_data_cpu = at::zeros({num_experts * send_per_group}, options_cpu);
-    at::Tensor num_tokens_per_expert_cpu = num_tokens_per_expert.value().to(torch::kCPU);
-    auto num_tokens_per_expert_ptr = num_tokens_per_expert_cpu.data_ptr<int>();
-    auto send_data_ptr = send_data_cpu.data_ptr<int>();
-    int32_t prefix_sum = 0;
-    at::Tensor send_data_offset_cpu = at::zeros({num_experts}, options_cpu);
-    auto send_data_offset_ptr = send_data_offset_cpu.data_ptr<int>();
-    for (int i = 0; i < num_experts; ++i) {
-        send_data_ptr[i * send_per_group] = num_tokens_per_expert_ptr[i];
-        send_data_ptr[i * send_per_group + 1] = prefix_sum;
-        send_data_ptr[i * send_per_group + 2] = num_tokens;
-        send_data_offset_ptr[i] = prefix_sum;
-        prefix_sum += num_tokens_per_expert_ptr[i];
-    }
+
+    auto send_data = at::zeros({num_experts * send_per_group}, at::dtype(at::kInt).device(x.device()));
     int64_t send_count = send_per_group * num_local_experts * num_ranks;
 
-    auto send_data = send_data_cpu.to(x.device());
-    auto send_data_offset = send_data_offset_cpu.to(x.device());
+    auto send_data_offset = at::zeros({num_experts}, at::dtype(at::kInt).device(x.device()));
     at::Tensor recv_data = at::zeros({num_experts * send_per_group}, at::dtype(at::kInt).device(x.device()));
 
     // get ep name
@@ -248,17 +196,22 @@ Buffer::intranode_dispatch(const at::Tensor& x, const std::optional<at::Tensor>&
 
     int64_t local_rank_size = num_ranks;
     int64_t local_rank_id = rank % local_rank_size;
+    auto new_num_tokens_per_expert = num_tokens_per_expert.value();
 
     EXEC_NPU_CMD(aclnnNotifyDispatch,
         send_data,
+        new_num_tokens_per_expert,
         send_count,
+        num_tokens,
         hcom_ep_name,       // commGroup
         num_ranks,          // rankSize
         rank,               // rankId
         local_rank_size,
         local_rank_id,
+        send_data_offset,
         recv_data);
 
+    auto options_cpu = torch::TensorOptions().dtype(torch::kInt32).device(torch::kCPU);
     std::vector<int32_t> local_expert_acc(num_experts, 0);
     auto send_token_idx_cpu = at::zeros({num_tokens, num_topk}, options_cpu);
     auto send_token_idx_ptr = send_token_idx_cpu.data_ptr<int>();
@@ -312,8 +265,8 @@ Buffer::intranode_dispatch(const at::Tensor& x, const std::optional<at::Tensor>&
     int64_t tp_size = 1;
     int64_t tp_rank = 0;
     int64_t quant_mode = 0;
-    int64_t global_bs = static_cast<int64_t>(std::ceil(
-        std::max(num_max_dispatch_tokens_per_rank * num_ranks, static_cast<int64_t>(num_worst_tokens)) * SCALE_SIZE));
+    int64_t global_bs = static_cast<int64_t>(
+        std::max(num_max_dispatch_tokens_per_rank * num_ranks, static_cast<int64_t>(num_worst_tokens)));
 
     auto send_token_idx = send_token_idx_cpu.to(x.device());
     auto recv_offset = recv_offset_cpu.to(x.device());
