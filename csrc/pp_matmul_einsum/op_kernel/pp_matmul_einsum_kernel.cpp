@@ -12,13 +12,14 @@
 
 
 #define __aicore__ [aicore]
+#include "kernel_operator.h"
 #include "../op_host/tiling/tiling_data.h"
-#include "common.h"
-#include "hardware.h"
-#include "mma.h"
-#include "utils.h"
-#include "iterator.h"
-#include "kernel/math_utils.h"
+#include "../../mla_preprocess/op_kernel/kernel/common.h"
+#include "../../mla_preprocess/op_kernel/kernel/hardware.h"
+#include "../../mla_preprocess/op_kernel/kernel/mma.h"
+#include "../../mla_preprocess/op_kernel/kernel/utils.h"
+#include "../../mla_preprocess/op_kernel/kernel/iterator.h"
+#include "../../utils/kernel/math_utils.h"
 
 constexpr uint32_t L0_PINGPONG_BUFFER_LEN = 16384;
 constexpr uint32_t L1_PINGPONG_BUFFER_LEN = 131072;
@@ -26,6 +27,7 @@ constexpr uint32_t CONST_16 = 16;
 constexpr uint32_t CONST_256 = 256;
 constexpr uint64_t ND2NZ_STRIDE_LIMIT = 65536;
 constexpr uint64_t BLOCK_SIZE_16 = 16;
+constexpr uint64_t CONST_16UL = 16;
 
 struct MatCoord {
     uint64_t m{0};
@@ -33,7 +35,7 @@ struct MatCoord {
     uint64_t n{0};
 };
 
-using ROUNDUP_UINT64_16 = RoundUp<uint64_t, CONST_16>;
+using namespace device_utils;
 
 template <uint32_t SwizzleDirect, bool TA, bool TB, typename InDtype = half, typename OutDtype = half, DataFormat FormatB = DataFormat::ND>
 class PpMatmulEinSum {
@@ -53,14 +55,14 @@ public:
         gm_a.SetGlobalBuffer(reinterpret_cast<__gm__ InDtype *>(a));
         gm_b.SetGlobalBuffer(reinterpret_cast<__gm__ InDtype *>(b));
         gm_c.SetGlobalBuffer(reinterpret_cast<__gm__ OutDtype *>(c));
-        auto gm_tiling_data = reinterpret_cast<__gm__ AsdOps::PpMatmulTilingData *>(tiling_data);
-        batch_size = gm_tiling_data->batch;
-        m = gm_tiling_data->m;
-        k = gm_tiling_data->k;
-        n = gm_tiling_data->n;
-        m0 = gm_tiling_data->m0;
-        k0 = gm_tiling_data->k0;
-        n0 = gm_tiling_data->n0;
+        auto gm_tiling_data = reinterpret_cast<__gm__ pp_matmul::PpMatmulTilingData *>(tiling_data);
+        batch_size = gm_tiling_data->opShape.batchSize;
+        m = gm_tiling_data->opShape.m;
+        k = gm_tiling_data->opShape.k;
+        n = gm_tiling_data->opShape.n;
+        m0 = gm_tiling_data->opShape.m0;
+        k0 = gm_tiling_data->opShape.k0;
+        n0 = gm_tiling_data->opShape.n0;
         tdim.m = gm_tiling_data->mLoop;
         tdim.k = gm_tiling_data->kLoop;
         tdim.n = gm_tiling_data->nLoop;
@@ -130,8 +132,8 @@ public:
             uint64_t offset_c = tidx.m * m0 * batch_size * n + batch_idx * n + tidx.n * n0;
             uint64_t m_actual = (tidx.m == (tdim.m - 1)) ? (m - tidx.m * m0) : m0;
             uint64_t n_actual = (tidx.n == (tdim.n - 1)) ? (n - tidx.n * n0) : n0;
-            uint64_t m_round = ROUNDUP_UINT64_16(m_actual);
-            uint64_t n_round = ROUNDUP_UINT64_16(n_actual);
+            uint64_t m_round = RoundUp<uint64_t, CONST_16UL>(m_actual);
+            uint64_t n_round = RoundUp<uint64_t, CONST_16UL>(n_actual);
             uint64_t mn_max = m_round > n_round ? m_round : n_round;
             uint64_t k_part_len = L0_PINGPONG_BUFFER_LEN / mn_max / CONST_16 * CONST_16;
             uint64_t shuffle_k = en_shuffle_k ? (core_idx % tdim.k) : 0;
@@ -145,13 +147,13 @@ public:
                 if constexpr (FormatB != DataFormat::NZ) {
                     offset_b = batch_idx * k * n + tidx.n * n0 * k + shuffle_k * k0;
                 } else {
-                    offset_b = batch_idx * ROUNDUP_UINT64_16(k) * ROUNDUP_UINT64_16(n) + tidx.n * n0 * BLOCK_SIZE_16 + shuffle_k * k0 * ROUNDUP_UINT64_16(n);
+                    offset_b = batch_idx * RoundUp<uint64_t, CONST_16UL>(k) * RoundUp<uint64_t, CONST_16UL>(n) + tidx.n * n0 * BLOCK_SIZE_16 + shuffle_k * k0 * RoundUp<uint64_t, CONST_16UL>(n);
                 }
             } else {
                 if constexpr (FormatB != DataFormat::NZ) {
                     offset_b = batch_idx * k * n + shuffle_k * k0 * n + tidx.n * n0;
                 } else {
-                    offset_b = batch_idx * ROUNDUP_UINT64_16(k) * ROUNDUP_UINT64_16(n) + shuffle_k * k0 * BLOCK_SIZE_16 + tidx.n * n0 * ROUNDUP_UINT64_16(k);
+                    offset_b = batch_idx * RoundUp<uint64_t, CONST_16UL>(k) * RoundUp<uint64_t, CONST_16UL>(n) + shuffle_k * k0 * BLOCK_SIZE_16 + tidx.n * n0 * RoundUp<uint64_t, CONST_16UL>(k);
                 }
             }
 
@@ -226,19 +228,19 @@ public:
                                         gm_b[offset_b], // src
                                         n_actual,       // nTileActual
                                         n_round,        // nTileCeil
-                                        ROUNDUP_UINT64_16(n),              // nVal
+                                        RoundUp<uint64_t, CONST_16UL>(n),              // nVal
                                         k_actual,       // dTileActual
                                         k_round,        // dTileCeil
-                                        ROUNDUP_UINT64_16(k));             // dVal
+                                        RoundUp<uint64_t, CONST_16UL>(k));             // dVal
                     } else {
                         CopyGmToCbuf<DataFormat::NZ, DataFormat::NZ>(l1_buf_b,       // dst
                                         gm_b[offset_b], // src
                                         k_actual,       // nTileActual
                                         k_round,        // nTileCeil
-                                        ROUNDUP_UINT64_16(k),              // nVal
+                                        RoundUp<uint64_t, CONST_16UL>(k),              // nVal
                                         n_actual,       // dTileActual
                                         n_round,        // dTileCeil
-                                        ROUNDUP_UINT64_16(n));             // dVal
+                                        RoundUp<uint64_t, CONST_16UL>(n));             // dVal
                     }
                 }
                 SET_FLAG(MTE2, MTE1, event_id + 2);
@@ -266,13 +268,13 @@ public:
                         if constexpr (FormatB != DataFormat::NZ) {
                             offset_b_next = batch_idx * k * n + tidx.n * n0 * k + shuffle_k_next * k0;
                         } else {
-                            offset_b_next = batch_idx * ROUNDUP_UINT64_16(k) * ROUNDUP_UINT64_16(n) + tidx.n * n0 * BLOCK_SIZE_16 + shuffle_k_next * k0 * ROUNDUP_UINT64_16(n);
+                            offset_b_next = batch_idx * RoundUp<uint64_t, CONST_16UL>(k) * RoundUp<uint64_t, CONST_16UL>(n) + tidx.n * n0 * BLOCK_SIZE_16 + shuffle_k_next * k0 * RoundUp<uint64_t, CONST_16UL>(n);
                         }
                     } else {
                         if constexpr (FormatB != DataFormat::NZ) {
                             offset_b_next = batch_idx * k * n + shuffle_k_next * k0 * n + tidx.n * n0;
                         } else {
-                            offset_b_next = batch_idx * ROUNDUP_UINT64_16(k) * ROUNDUP_UINT64_16(n) + shuffle_k_next * k0 * BLOCK_SIZE_16 + tidx.n * n0 * ROUNDUP_UINT64_16(k);
+                            offset_b_next = batch_idx * RoundUp<uint64_t, CONST_16UL>(k) * RoundUp<uint64_t, CONST_16UL>(n) + shuffle_k_next * k0 * BLOCK_SIZE_16 + tidx.n * n0 * RoundUp<uint64_t, CONST_16UL>(k);
                         }
                     }
 
@@ -345,19 +347,19 @@ public:
                                             gm_b[offset_b_next], // src
                                             n_actual,            // nTileActual
                                             n_round,             // nTileCeil
-                                            ROUNDUP_UINT64_16(n),                   // nVal
+                                            RoundUp<uint64_t, CONST_16UL>(n),                   // nVal
                                             k_actual_next,       // dTileActual
                                             k_round_next,        // dTileCeil
-                                            ROUNDUP_UINT64_16(k));                  // dVal
+                                            RoundUp<uint64_t, CONST_16UL>(k));                  // dVal
                         } else {
                             CopyGmToCbuf<DataFormat::NZ, DataFormat::NZ>(l1_buf_b_next,       // dst
                                             gm_b[offset_b_next], // src
                                             k_actual_next,       // nTileActual
                                             k_round_next,        // nTileCeil
-                                            ROUNDUP_UINT64_16(k),                   // nVal
+                                            RoundUp<uint64_t, CONST_16UL>(k),                   // nVal
                                             n_actual,            // dTileActual
                                             n_round,             // dTileCeil
-                                            ROUNDUP_UINT64_16(n));                  // dVal
+                                            RoundUp<uint64_t, CONST_16UL>(n));                  // dVal
                         }
                     }
                     SET_FLAG(MTE2, MTE1, event_id_next + 2);
@@ -384,13 +386,13 @@ public:
                         if constexpr (FormatB != DataFormat::NZ) {
                             offset_b_next = b_idx_next * k * n + tidx.n * n0 * k + shuffle_k_next * k0;
                         } else {
-                            offset_b_next = b_idx_next * ROUNDUP_UINT64_16(k) * ROUNDUP_UINT64_16(n) + tidx.n * n0 * BLOCK_SIZE_16 + shuffle_k_next * k0 * ROUNDUP_UINT64_16(n);
+                            offset_b_next = b_idx_next * RoundUp<uint64_t, CONST_16UL>(k) * RoundUp<uint64_t, CONST_16UL>(n) + tidx.n * n0 * BLOCK_SIZE_16 + shuffle_k_next * k0 * RoundUp<uint64_t, CONST_16UL>(n);
                         }
                     } else {
                         if constexpr (FormatB != DataFormat::NZ) {
                             offset_b_next = b_idx_next * k * n + shuffle_k_next * k0 * n + tidx.n * n0;
                         } else {
-                            offset_b_next = b_idx_next * ROUNDUP_UINT64_16(k) * ROUNDUP_UINT64_16(n) + shuffle_k_next * k0 * BLOCK_SIZE_16 + tidx.n * n0 * ROUNDUP_UINT64_16(k);
+                            offset_b_next = b_idx_next * RoundUp<uint64_t, CONST_16UL>(k) * RoundUp<uint64_t, CONST_16UL>(n) + shuffle_k_next * k0 * BLOCK_SIZE_16 + tidx.n * n0 * RoundUp<uint64_t, CONST_16UL>(k);
                         }
                     }
 
@@ -460,19 +462,19 @@ public:
                                             gm_b[offset_b_next], // src
                                             n_actual_next,       // nTileActual
                                             n_round_next,        // nTileCeil
-                                            ROUNDUP_UINT64_16(n),                   // nVal
+                                            RoundUp<uint64_t, CONST_16UL>(n),                   // nVal
                                             k_actual_next,       // dTileActual
                                             k_round_next,        // dTileCeil
-                                            ROUNDUP_UINT64_16(k));                  // dVal
+                                            RoundUp<uint64_t, CONST_16UL>(k));                  // dVal
                         } else {
                             CopyGmToCbuf<DataFormat::NZ, DataFormat::NZ>(l1_buf_b_next,       // dst
                                             gm_b[offset_b_next], // src
                                             k_actual_next,       // nTileActual
                                             k_round_next,        // nTileCeil
-                                            ROUNDUP_UINT64_16(k),                   // nVal
+                                            RoundUp<uint64_t, CONST_16UL>(k),                   // nVal
                                             n_actual_next,       // dTileActual
                                             n_round_next,        // dTileCeil
-                                            ROUNDUP_UINT64_16(n));                  // dVal
+                                            RoundUp<uint64_t, CONST_16UL>(n));                  // dVal
                         }
                     }
                     SET_FLAG(MTE2, MTE1, event_id_next + 2);
@@ -638,10 +640,10 @@ private:
     uint32_t ping_flag{0};
 };
 
-extern "C" __global__ __aicore__ void pp_matmul_einsum(__gm__ uint8_t *__restrict__ gm_a,
-                                                        __gm__ uint8_t *__restrict__ gm_b,
-                                                        __gm__ uint8_t *__restrict__ gm_c,
-                                                        __gm__ uint8_t *__restrict__ gm_tiling_data)
+extern "C" __global__ __aicore__ void pp_matmul_einsum(GM_ADDR gm_a,
+                                                        GM_ADDR gm_b,
+                                                        GM_ADDR gm_c,
+                                                        GM_ADDR gm_tiling_data)
 {
     PpMatmulEinSum<0, false, false, half, half, DataFormat::ND> einsum_0_n_fp16_nd;     // swizzleDir[0] transA[0] transB[0] DtypeA[001] DtypeB[001] DtypeC[001] DataFormatA[0] DataFormatB[0]
     PpMatmulEinSum<1, false, false, half, half, DataFormat::ND> einsum_1_n_fp16_nd;     // swizzleDir[1] transA[0] transB[0] DtypeA[001] DtypeB[001] DtypeC[001] DataFormatA[0] DataFormatB[0]
@@ -666,7 +668,7 @@ extern "C" __global__ __aicore__ void pp_matmul_einsum(__gm__ uint8_t *__restric
     SetAtomicnone();
 
     // get tiling args
-    auto tiling_data = reinterpret_cast<__gm__ AsdOps::PpMatmulTilingData *>(gm_tiling_data);
+    auto tiling_data = reinterpret_cast<__gm__ pp_matmul::PpMatmulTilingData *>(gm_tiling_data);
     uint32_t masked_key = tiling_data->tilingKey >> 2;
 
     switch (masked_key) {
