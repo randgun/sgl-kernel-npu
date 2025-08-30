@@ -12,13 +12,13 @@
 
 
 #define __aicore__ [aicore]
-#include "../host/tiling/tiling_data.h"
+#include "../op_host/tiling/tiling_data.h"
 #include "common.h"
 #include "hardware.h"
 #include "mma.h"
 #include "utils.h"
 #include "iterator.h"
-#include "utils/kernel/math_utils.h"
+#include "kernel/math_utils.h"
 
 constexpr uint32_t L0_PINGPONG_BUFFER_LEN = 16384;
 constexpr uint32_t L1_PINGPONG_BUFFER_LEN = 131072;
