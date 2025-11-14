@@ -89,6 +89,13 @@ at::Tensor sgmv_expand(at::Tensor &x, at::Tensor &weight,
 void sgmv_shrink(at::Tensor &x, at::Tensor &weight, at::Tensor &lora_indices,
                  at::Tensor &seq_len, at::Tensor &y, double scale);
 
+void lightning_indexer(const at::Tensor &query, const at::Tensor &key,
+                       const at::Tensor &weights,
+                       const at::Tensor &actual_seq_lengths_q,
+                       const at::Tensor &actual_seq_lengths,
+                       const at::Tensor &blocktable,
+                       at::Tensor &sparse_indices);
+
 } // namespace npu_kernel
 
 } // namespace sglang

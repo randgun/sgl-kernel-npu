@@ -78,6 +78,10 @@ TORCH_LIBRARY_FRAGMENT(npu, m)
 
     m.def(
         "sgmv_shrink(Tensor! x, Tensor! weight, Tensor! lora_indices, Tensor! seq_len, Tensor! y, float scale) -> ()");
+
+    m.def(
+        "lightning_indexer(Tensor! query, Tensor! key, Tensor! weights, Tensor! actual_seq_lengths_q, "
+        "Tensor! actual_seq_lengths, Tensor! blocktable, Tensor(a!) sparse_indices) -> ()");
 }
 }  // namespace
 
@@ -109,5 +113,7 @@ TORCH_LIBRARY_IMPL(npu, PrivateUse1, m)
     m.impl("sgmv_expand", TORCH_FN(sglang::npu_kernel::sgmv_expand));
 
     m.impl("sgmv_shrink", TORCH_FN(sglang::npu_kernel::sgmv_shrink));
+
+    m.impl("lightning_indexer", TORCH_FN(sglang::npu_kernel::lightning_indexer));
 }
 }  // namespace
