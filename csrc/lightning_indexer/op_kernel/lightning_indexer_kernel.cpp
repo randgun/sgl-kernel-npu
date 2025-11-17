@@ -654,8 +654,8 @@ __global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8
 
     auto tilingData = reinterpret_cast<__gm__ LIHost::LITilingData *>(tiling);
 
-    LIPreload<LIType<half, half, int32_t, true, LI_LAYOUT::BNSD, LI_LAYOUT::PA_BSND>> half_pa_bsnd_pabsnd_op;
-    LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::BNSD, LI_LAYOUT::PA_BSND>> bf16_pa_bsnd_pabsnd_op;
+    LIPreload<LIType<half, half, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> half_pa_bsnd_pabsnd_op;
+    LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> bf16_pa_bsnd_pabsnd_op;
 
     auto tilingKey = tilingData->tilingKey >> 8;
     // uint32_t kLayout = tilingKey & 0x0f;
