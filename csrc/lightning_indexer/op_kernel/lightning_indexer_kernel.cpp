@@ -643,10 +643,10 @@ __aicore__ inline void LIPreload<LIT>::ProcessDecode()
     }
 }
 
-__global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8_t *key, __gm__ uint8_t *weights,
-                                             __gm__ uint8_t *actualSeqLengthsQ, __gm__ uint8_t *actualSeqLengths,
-                                             __gm__ uint8_t *blocktable, __gm__ uint8_t *sparseIndices,
-                                             __gm__ uint8_t *workspace, __gm__ uint8_t *tiling)
+__global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR weights,
+                                             GM_ADDR actualSeqLengthsQ, GM_ADDR actualSeqLengths,
+                                             GM_ADDR blocktable, GM_ADDR sparseIndices,
+                                             GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe tPipe;
     __gm__ uint8_t *userWorkspace = GetUserWorkspace(workspace);
