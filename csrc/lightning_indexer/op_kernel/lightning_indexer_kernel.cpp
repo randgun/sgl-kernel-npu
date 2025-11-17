@@ -60,7 +60,7 @@ public:
     __aicore__ inline void Init(__gm__ uint8_t *query, __gm__ uint8_t *key, __gm__ uint8_t *weights,
                                 __gm__ uint8_t *actualSeqLengthsQ, __gm__ uint8_t *actualSeqLengths,
                                 __gm__ uint8_t *blockTable, __gm__ uint8_t *sparseIndices, __gm__ uint8_t *workspace,
-                                const LITilingData *__restrict tiling, TPipe *tPipe);
+                                const LIHost::LITilingData *__restrict tiling, TPipe *tPipe);
     __aicore__ inline void Process();
 
     // =================================类型定义区=================================
@@ -125,7 +125,7 @@ protected:
     LICommon::SplitCoreInfo splitCoreInfo{};
 
     // ================================Init functions==================================
-    __aicore__ inline void InitTilingData(const LITilingData *__restrict tilingData);
+    __aicore__ inline void InitTilingData(const LIHost::LITilingData *__restrict tilingData);
     __aicore__ inline void InitBuffers();
     __aicore__ inline void InitActualSeqLen(__gm__ uint8_t *actualSeqLengthsQ, __gm__ uint8_t *actualSeqLengths);
     // ================================Split Core================================
@@ -149,7 +149,7 @@ protected:
 };
 
 template <typename LIT>
-__aicore__ inline void LIPreload<LIT>::InitTilingData(const LITilingData *__restrict tilingData)
+__aicore__ inline void LIPreload<LIT>::InitTilingData(const LIHost::LITilingData *__restrict tilingData)
 {
     usedCoreNum = tilingData->usedCoreNum;
     constInfo.batchSize = tilingData->bSize;
@@ -373,7 +373,7 @@ template <typename LIT>
 __aicore__ inline void LIPreload<LIT>::Init(__gm__ uint8_t *query, __gm__ uint8_t *key, __gm__ uint8_t *weights,
                                             __gm__ uint8_t *actualSeqLengthsQ, __gm__ uint8_t *actualSeqLengths,
                                             __gm__ uint8_t *blockTable, __gm__ uint8_t *sparseIndices,
-                                            __gm__ uint8_t *workspace, const LITilingData *__restrict tiling,
+                                            __gm__ uint8_t *workspace, const LIHost::LITilingData *__restrict tiling,
                                             TPipe *tPipe)
 {
     if ASCEND_IS_AIV {
@@ -652,7 +652,7 @@ __global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8
     __gm__ uint8_t *user = GetUserWorkspace(workspace);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2);
 
-    auto tilingData = reinterpret_cast<LITilingData *>(tiling);
+    auto tilingData = reinterpret_cast<LIHost::LITilingData *>(tiling);
     auto tilingKey = tilingData->tilingKey;
     if (tilingKety == 0) {
         LIPreload<LIType<half, half, int32_t, PAGE_ATTENTION, LI_LAYOUT(LAYOUT_T), LI_LAYOUT(K_LAYOUT_T)>> op;
