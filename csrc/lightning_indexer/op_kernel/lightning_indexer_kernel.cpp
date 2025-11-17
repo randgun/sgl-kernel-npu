@@ -653,14 +653,20 @@ __global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2);
 
     auto tilingData = reinterpret_cast<__gm__ LIHost::LITilingData *>(tiling);
-    auto tilingKey = tilingData->tilingKey;
+    auto tilingKey = tilingData->tilingKey >> 8;
+    uint32_t kLayout = tilingKey & 0x0f;
+    tilingKey >>= 4;
+    uint32_t qLayout = tilingKey & 0x0f;
+    tilingKey >>= 4;
+    uint32_t pageAttentionFlag = tilingKey & 0x0f;
+
     if (tilingKey == 0) {
-        LIPreload<LIType<half, half, int32_t, PAGE_ATTENTION, LI_LAYOUT(LAYOUT_T), LI_LAYOUT(K_LAYOUT_T)>> op;
+        LIPreload<LIType<half, half, int32_t, pageAttentionFlag, LI_LAYOUT(qLayout), LI_LAYOUT(kLayout)>> op;
         op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
                 &tPipe);
         op.Process();
     } else {
-        LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, PAGE_ATTENTION, LI_LAYOUT(LAYOUT_T), LI_LAYOUT(K_LAYOUT_T)>>
+        LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, pageAttentionFlag, LI_LAYOUT(qLayout), LI_LAYOUT(kLayout)>>
             op;
         op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
                 &tPipe);
