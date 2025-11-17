@@ -649,7 +649,7 @@ __global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8
                                              __gm__ uint8_t *workspace, __gm__ uint8_t *tiling)
 {
     TPipe tPipe;
-    __gm__ uint8_t *user = GetUserWorkspace(workspace);
+    __gm__ uint8_t *userWorkspace = GetUserWorkspace(workspace);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2);
 
     auto tilingData = reinterpret_cast<__gm__ LIHost::LITilingData *>(tiling);
@@ -665,11 +665,11 @@ __global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8
     // uint32_t pageAttentionFlag = tilingKey & 0x0f;
 
     if (tilingKey == 0) {
-        half_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
+        half_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
                 &tPipe);
         half_pa_bsnd_pabsnd_op.Process();
     } else {
-        bf16_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
+        bf16_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
                 &tPipe);
         bf16_pa_bsnd_pabsnd_op.Process();
     }
