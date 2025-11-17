@@ -642,6 +642,8 @@ __aicore__ inline void LIPreload<LIT>::ProcessDecode()
         }
     }
 }
+}  // namespace LIKernel
+// #endif // LIGHTNING_INDEXER_KERNEL_H
 
 __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR weights,
                                              GM_ADDR actualSeqLengthsQ, GM_ADDR actualSeqLengths,
@@ -674,5 +676,3 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
         bf16_pa_bsnd_pabsnd_op.Process();
     }
 }
-}  // namespace LIKernel
-// #endif // LIGHTNING_INDEXER_KERNEL_H
