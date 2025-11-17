@@ -653,24 +653,25 @@ __global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2);
 
     auto tilingData = reinterpret_cast<__gm__ LIHost::LITilingData *>(tiling);
+
+    LIPreload<LIType<half, half, int32_t, true, LI_LAYOUT::BNSD, LI_LAYOUT::PA_BSND>> half_pa_bsnd_pabsnd_op;
+    LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::BNSD, LI_LAYOUT::PA_BSND>> bf16_pa_bsnd_pabsnd_op;
+
     auto tilingKey = tilingData->tilingKey >> 8;
-    uint32_t kLayout = tilingKey & 0x0f;
-    tilingKey >>= 4;
-    uint32_t qLayout = tilingKey & 0x0f;
-    tilingKey >>= 4;
-    uint32_t pageAttentionFlag = tilingKey & 0x0f;
+    // uint32_t kLayout = tilingKey & 0x0f;
+    // tilingKey >>= 4;
+    // uint32_t qLayout = tilingKey & 0x0f;
+    // tilingKey >>= 4;
+    // uint32_t pageAttentionFlag = tilingKey & 0x0f;
 
     if (tilingKey == 0) {
-        LIPreload<LIType<half, half, int32_t, pageAttentionFlag, LI_LAYOUT(qLayout), LI_LAYOUT(kLayout)>> op;
-        op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
+        half_pa_bsnd_pabsnd_op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
                 &tPipe);
-        op.Process();
+        half_pa_bsnd_pabsnd_op.Process();
     } else {
-        LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, pageAttentionFlag, LI_LAYOUT(qLayout), LI_LAYOUT(kLayout)>>
-            op;
-        op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
+        bf16_pa_bsnd_pabsnd_op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
                 &tPipe);
-        op.Process();
+        bf16_pa_bsnd_pabsnd_op.Process();
     }
 }
 }  // namespace LIKernel

@@ -166,6 +166,7 @@ private:
     bool valueInitialized_ = false;
 };
 
+// TODO: Do automatic registery template class at compile time
 class OpDef
 {
 public:
