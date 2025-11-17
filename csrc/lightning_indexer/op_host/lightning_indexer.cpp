@@ -13,7 +13,7 @@
 
 namespace sglang {
 namespace LIHost {
-using namespace sglang::ge_helper;
+using namespace ge_helper;
 constexpr uint32_t MAX_CAPTURE_NUM = 1024;
 uint32_t actualCaptureNum = 0;
 std::unordered_map<uint32_t, uint32_t> captureMap;

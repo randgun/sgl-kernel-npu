@@ -24,7 +24,7 @@
 #include "lightning_indexer_common.h"
 
 namespace sglang::npu_kernel::LIKernel {
-using namespace sglang::npu_kernel::LICommon;
+using namespace LICommon;
 template <typename LIT>
 class LIMatmul
 {
@@ -308,7 +308,7 @@ __aicore__ inline void LIMatmul<LIT>::LoadQueryToL0a(uint64_t s1gGmOffset, uint6
 {
     LoadData3DParamsV2<Q_T> loadData3DParams;
     // SetFmatrixParams
-    loadData3DParams.l1H = CeilDiv(s1gL1RealSize, BLOCK_CUBE);  // Hin=M1=8
+    loadData3DParams.l1H = CeilDiv(s1gL1RealSize, (uint64_t)BLOCK_CUBE);  // Hin=M1=8
     loadData3DParams.l1W = BLOCK_CUBE;                          // Win=M0
     loadData3DParams.channelSize = constInfo_.headDim;          // Cin=K
 
@@ -318,7 +318,7 @@ __aicore__ inline void LIMatmul<LIT>::LoadQueryToL0a(uint64_t s1gGmOffset, uint6
     loadData3DParams.padList[3] = 255;  // 尾部数据不影响滑窗的结果
 
     // SetLoadToA0Params
-    loadData3DParams.mExtension = CeilAlign(s1gL0RealSize, BLOCK_CUBE);  // M height维度目的
+    loadData3DParams.mExtension = CeilAlign(s1gL0RealSize, (uint64_t)BLOCK_CUBE);  // M height维度目的
     loadData3DParams.kExtension = constInfo_.headDim;                    // K width维度目的
     loadData3DParams.mStartPt = s1gL1Offset;
     loadData3DParams.kStartPt = 0;
@@ -345,7 +345,7 @@ __aicore__ inline void LIMatmul<LIT>::LoadKeyToL0b(uint64_t s2L1Offset, uint64_t
     uint64_t keyL1Offset = s2L1Offset >= S2_BASIC_BLOCK_L0 ? S2_BASIC_BLOCK_L0 * D_BASIC_BLOCK_L0 : 0;
     LoadData2DParams loadData2DParams;
     loadData2DParams.startIndex = 0;
-    loadData2DParams.repeatTimes = CeilDiv(s2L0RealSize, BLOCK_CUBE) * CeilDiv(constInfo_.headDim, BLOCK_CUBE);
+    loadData2DParams.repeatTimes = CeilDiv(s2L0RealSize, (uint64_t)BLOCK_CUBE) * CeilDiv(constInfo_.headDim, (uint64_t)BLOCK_CUBE);
     loadData2DParams.srcStride = 1;
     loadData2DParams.dstGap = 0;
     loadData2DParams.ifTranspose = false;
@@ -358,7 +358,7 @@ __aicore__ inline void LIMatmul<LIT>::ComuteL0c(uint64_t s1gL0RealSize, uint64_t
                                                 const LICommon::RunInfo &runInfo)
 {
     MmadParams mmadParams;
-    mmadParams.m = CeilAlign(s1gL0RealSize, BLOCK_CUBE);
+    mmadParams.m = CeilAlign(s1gL0RealSize, (uint64_t)BLOCK_CUBE);
     mmadParams.n = s2L0RealSize;
     mmadParams.k = constInfo_.headDim;
     mmadParams.cmatrixInitVal = true;

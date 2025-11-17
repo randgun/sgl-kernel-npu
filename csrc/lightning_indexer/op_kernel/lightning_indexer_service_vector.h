@@ -26,8 +26,8 @@
 #include "../op_host/tiling/lightning_tiling_data.h"
 
 namespace sglang::npu_kernel::LIKernel {
-using namespace sglang::npu_kernel::LICommon;
-using namespace sglang::npu_kernel::LIServiceVec;
+using namespace LICommon;
+using namespace LIServiceVec;
 constexpr uint32_t BASE_TOPK = 2048;
 constexpr uint32_t LD_PARAM_NUM = 16;
 
@@ -496,7 +496,7 @@ __aicore__ inline void LIVector<LIT>::ProcessLD()
     }
 
     // S1逐行计算
-    uint32_t s1VecNum = CeilDiv(s1ProcNum, 2);
+    uint32_t s1VecNum = CeilDiv(s1ProcNum, 2U);
     if (blockId_ % 2 == 1) {
         s1LdStartIdx = s1LdStartIdx + s1VecNum;
         s1VecNum = s1ProcNum - s1VecNum;
