@@ -60,7 +60,7 @@ public:
     __aicore__ inline void Init(__gm__ uint8_t *query, __gm__ uint8_t *key, __gm__ uint8_t *weights,
                                 __gm__ uint8_t *actualSeqLengthsQ, __gm__ uint8_t *actualSeqLengths,
                                 __gm__ uint8_t *blockTable, __gm__ uint8_t *sparseIndices, __gm__ uint8_t *workspace,
-                                const LIHost::LITilingData *__restrict tiling, TPipe *tPipe);
+                                const  __gm__ LIHost::LITilingData * tiling, TPipe *tPipe);
     __aicore__ inline void Process();
 
     // =================================类型定义区=================================
@@ -125,7 +125,7 @@ protected:
     LICommon::SplitCoreInfo splitCoreInfo{};
 
     // ================================Init functions==================================
-    __aicore__ inline void InitTilingData(const LIHost::LITilingData *__restrict tilingData);
+    __aicore__ inline void InitTilingData(const  __gm__ LIHost::LITilingData * tilingData);
     __aicore__ inline void InitBuffers();
     __aicore__ inline void InitActualSeqLen(__gm__ uint8_t *actualSeqLengthsQ, __gm__ uint8_t *actualSeqLengths);
     // ================================Split Core================================
@@ -149,7 +149,7 @@ protected:
 };
 
 template <typename LIT>
-__aicore__ inline void LIPreload<LIT>::InitTilingData(const LIHost::LITilingData *__restrict tilingData)
+__aicore__ inline void LIPreload<LIT>::InitTilingData(const  __gm__ LIHost::LITilingData * tilingData)
 {
     usedCoreNum = tilingData->usedCoreNum;
     constInfo.batchSize = tilingData->bSize;
@@ -373,7 +373,7 @@ template <typename LIT>
 __aicore__ inline void LIPreload<LIT>::Init(__gm__ uint8_t *query, __gm__ uint8_t *key, __gm__ uint8_t *weights,
                                             __gm__ uint8_t *actualSeqLengthsQ, __gm__ uint8_t *actualSeqLengths,
                                             __gm__ uint8_t *blockTable, __gm__ uint8_t *sparseIndices,
-                                            __gm__ uint8_t *workspace, const LIHost::LITilingData *__restrict tiling,
+                                            __gm__ uint8_t *workspace, const  __gm__ LIHost::LITilingData * tiling,
                                             TPipe *tPipe)
 {
     if ASCEND_IS_AIV {
