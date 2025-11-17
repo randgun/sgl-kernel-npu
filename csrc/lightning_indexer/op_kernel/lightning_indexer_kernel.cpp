@@ -665,11 +665,11 @@ __global__ __aicore__ void lightning_indexer(__gm__ uint8_t *query, __gm__ uint8
     // uint32_t pageAttentionFlag = tilingKey & 0x0f;
 
     if (tilingKey == 0) {
-        half_pa_bsnd_pabsnd_op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
+        half_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
                 &tPipe);
         half_pa_bsnd_pabsnd_op.Process();
     } else {
-        bf16_pa_bsnd_pabsnd_op.init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
+        bf16_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, user, tiling,
                 &tPipe);
         bf16_pa_bsnd_pabsnd_op.Process();
     }
