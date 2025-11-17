@@ -651,13 +651,13 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
                                              GM_ADDR workspace, GM_ADDR tiling)
 {
     AscendC::TPipe tPipe;
-    using namespace sglang::LIHost;
     using namespace sglang::npu_kernel::LICommon;
+    using namespace sglang::npu_kernel::LIKernel;
 
     __gm__ uint8_t *userWorkspace = AscendC::GetUserWorkspace(workspace);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2);
 
-    auto tilingData = reinterpret_cast<__gm__ LIHost::LITilingData *>(tiling);
+    auto tilingData = reinterpret_cast<__gm__ sglang::LIHost::LITilingData *>(tiling);
 
     LIPreload<LIType<half, half, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> half_pa_bsnd_pabsnd_op;
     LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> bf16_pa_bsnd_pabsnd_op;
