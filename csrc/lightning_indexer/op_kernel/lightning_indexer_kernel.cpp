@@ -650,8 +650,11 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
                                              GM_ADDR blocktable, GM_ADDR sparseIndices,
                                              GM_ADDR workspace, GM_ADDR tiling)
 {
-    TPipe tPipe;
-    __gm__ uint8_t *userWorkspace = GetUserWorkspace(workspace);
+    AscendC::TPipe tPipe;
+    using namespace sglang::LIHost;
+    using namespace sglang::npu_kernel::LICommon;
+
+    __gm__ uint8_t *userWorkspace = AscendC::GetUserWorkspace(workspace);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2);
 
     auto tilingData = reinterpret_cast<__gm__ LIHost::LITilingData *>(tiling);
@@ -660,11 +663,6 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
     LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> bf16_pa_bsnd_pabsnd_op;
 
     auto tilingKey = tilingData->tilingKey >> 8;
-    // uint32_t kLayout = tilingKey & 0x0f;
-    // tilingKey >>= 4;
-    // uint32_t qLayout = tilingKey & 0x0f;
-    // tilingKey >>= 4;
-    // uint32_t pageAttentionFlag = tilingKey & 0x0f;
 
     if (tilingKey == 0) {
         half_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
