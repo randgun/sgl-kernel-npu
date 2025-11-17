@@ -25,11 +25,11 @@
 #include "lightning_indexer_common.h"
 #include "lightning_indexer_service_vector.h"
 #include "lightning_indexer_service_cube.h"
-#include "../op_host/tiling/lightning_indexer_tiling.h"
+#include "../op_host/tiling/lightning_tiling_data.h"
 
-namespace LIKernel {
-using namespace LICommon;
-using namespace LIServiceVec;
+namespace sglang::npu_kernel::LIKernel {
+using namespace sglang::npu_kernel::LICommon;
+using namespace sglang::npu_kernel::LIServiceVec;
 using namespace matmul;
 using AscendC::CacheMode;
 using AscendC::CrossCoreSetFlag;

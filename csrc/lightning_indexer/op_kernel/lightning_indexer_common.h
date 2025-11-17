@@ -16,7 +16,7 @@
 #ifndef LIGHTNING_INDEXER_COMMON_H
 #define LIGHTNING_INDEXER_COMMON_H
 
-namespace LICommon {
+namespace sglang::npu_kernel::LICommon {
 
 // 与tiling的layout保持一致
 enum class LI_LAYOUT { BSND = 0, TND = 1, PA_BSND = 2 };

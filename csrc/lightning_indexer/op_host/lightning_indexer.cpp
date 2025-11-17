@@ -12,15 +12,13 @@
 #include "aclrtlaunch_lightning_indexer.h"
 
 namespace sglang {
-namespace npu_kernel {
-using namespace ge_helper;
-
-namespace lightning_indexer {
+namespace LIHost {
+using namespace sglang::ge_helper;
 constexpr uint32_t MAX_CAPTURE_NUM = 1024;
 uint32_t actualCaptureNum = 0;
 std::unordered_map<uint32_t, uint32_t> captureMap;
 at::tensor workspace;
-}  // namespace lightning_indexer
+}  // namespace LIHost
 
 HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
                                 const at::Tensor &actual_seq_lengths_q, const at::Tensor &actual_seq_lengths,
@@ -52,24 +50,23 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     uint32_t tilingSize = sizeof(LITilingData);
     auto bs = query.sizes()[0];
 
-    static auto globalTilingData = at::empty({tilingSize * lightning_indexer::MAX_CAPTURE_NUM},
+    static auto globalTilingData = at::empty({tilingSize * LIHost::MAX_CAPTURE_NUM},
                                              at::TensorOptions().dtype(at::kByte).device(query.options().device()));
     if (captureMap.find(bs) == captureMap.end()) {
-        TORCH_CHECK(lightning_indexer::actureCaptureNum < lightning_indexer::MAX_CAPTURE_NUM,
+        TORCH_CHECK(LIHost::actureCaptureNum < LIHost::MAX_CAPTURE_NUM,
                     "lightning_indexer captureNum overflow")
-        captureMap[bs] = lightning_indexer::actureCaptureNum;
-        aclmemcpy(globalTilingData.data_ptr<uint8_t>() + lightning_indexer::actureCaptureNum * tilingSize, tilingSize,
+        captureMap[bs] = LIHost::actureCaptureNum;
+        aclmemcpy(globalTilingData.data_ptr<uint8_t>() + LIHost::actureCaptureNum * tilingSize, tilingSize,
                   &tilingData, tilingSize, ACL_MEMCPY_HOST_TO_DEVICE);
-        lightning_indexer::actureCaptureNum++;
+        LIHost::actureCaptureNum++;
     }
     at::Tensor tilingTensor =
         at::from_blob(globalTilingData.data_ptr<uint8_t>() + (tilingSize * captureMap[bs]), tilingSize, at::kByte);
 
     size_t userWorkspaceSize = context->GetWorkspaceSize(1);
-    lightning_indexer::workspace =
+    LIHost::workspace =
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
     EXEC_KERNEL_CMD(lightning_indexer, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
                     sparse_indices, workspace, tilingTensor);
 }
-}  // namespace npu_kernel
 }  // namespace sglang

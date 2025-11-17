@@ -23,8 +23,8 @@
 #include "lib/matrix/matmul/tiling.h"
 #include "lightning_indexer_common.h"
 
-namespace LIKernel {
-using namespace LICommon;
+namespace sglang::npu_kernel::LIKernel {
+using namespace sglang::npu_kernel::LICommon;
 template <typename LIT>
 class LIMatmul
 {

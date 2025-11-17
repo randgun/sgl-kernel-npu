@@ -24,8 +24,9 @@
 #include "tiling/tiling_api.h"
 #include "error/ops_error.h"
 #include "platform/platform_info.h"
+#include "../op_host/tiling/lightning_tiling_data.h"
 
-namespace optiling {
+namespace sglang::LIHost {
 // ------------------公共定义--------------------------
 struct TilingRequiredParaInfo {
     const gert::CompileTimeTensorDesc *desc;
@@ -65,23 +66,6 @@ constexpr uint32_t DIM_NUM_FOUR = 4;
 constexpr uint32_t HEAD_DIM_LIMIT = 128;
 constexpr uint32_t SPARSE_LIMIT = 2048;
 constexpr uint32_t SPARSE_MODE_LOWER = 3;
-
-// -----------算子TilingData定义---------------
-#pragma pack(push, 1)
-struct LITilingData {
-    uint32_t bSize = 0U;
-    uint32_t n2Size = 0U;
-    uint32_t gSize = 0U;
-    uint32_t s1Size = 0U;
-    uint32_t s2Size = 0U;
-    uint32_t sparseCount = 0U;
-    uint32_t usedCoreNum = 0U;
-    uint32_t blockSize = 0U;
-    uint32_t maxBlockNumPerBatch = 0U;
-    uint32_t sparseMode = 0U;
-    uint32_t tilingKey = 0U;
-};
-#pragma pack(pop)
 
 // -----------算子CompileInfo定义-------------------
 struct LICompileInfo {};

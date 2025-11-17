@@ -23,10 +23,11 @@
 #include "lib/matrix/matmul/tiling.h"
 #include "lightning_indexer_common.h"
 #include "lightning_indexer_vector.h"
+#include "../op_host/tiling/lightning_tiling_data.h"
 
-namespace LIKernel {
-using namespace LICommon;
-using namespace LIServiceVec;
+namespace sglang::npu_kernel::LIKernel {
+using namespace sglang::npu_kernel::LICommon;
+using namespace sglang::npu_kernel::LIServiceVec;
 constexpr uint32_t BASE_TOPK = 2048;
 constexpr uint32_t LD_PARAM_NUM = 16;
 

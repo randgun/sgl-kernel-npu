@@ -19,7 +19,7 @@
 #include "lightning_indexer_vector.h"
 #include "kernel_operator.h"
 
-namespace LIServiceVec {
+namespace sglang::npu_kernel::LIServiceVec {
 using namespace AscendC;
 
 constexpr int32_t NEG_INF = 0xFF800000;

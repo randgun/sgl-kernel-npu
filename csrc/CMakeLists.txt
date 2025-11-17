@@ -18,6 +18,7 @@ FILE(GLOB OP_SRCS
     ${PROJECT_OP_SRC_BASE}/lora/op_host/sgmv_expand.cpp
     ${PROJECT_OP_SRC_BASE}/lora/op_host/sgmv_shrink.cpp
     ${PROJECT_OP_SRC_BASE}/lightning_indexer/op_host/lightning_indexer.cpp
+    ${PROJECT_OP_SRC_BASE}/lightning_indexer/op_host/tiling/lightning_indexer_tiling.cpp
     )
 
 # set the so name

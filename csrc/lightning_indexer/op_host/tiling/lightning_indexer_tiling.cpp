@@ -15,13 +15,12 @@
  */
 
 #include "lightning_indexer_tiling.h"
-// #include "../op_kernel/lightning_indexer_template_tiling_key.h"
 
 using namespace ge;
 using namespace AscendC;
 using std::map;
 using std::string;
-namespace optiling {
+namespace sglang::LIHost {
 
 #define OPS_LOG_E(opName, logInfo) (std::string(opName) + ": " + logInfo)
 // --------------------------LIInfoParser类成员函数定义-------------------------------------

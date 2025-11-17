@@ -17,7 +17,7 @@
 #include "ge_helper.h"
 
 namespace sglang {
-namespace ge_helper {
+namespace LIHost {
 
 class LightningIndexer : public OpDef
 {
