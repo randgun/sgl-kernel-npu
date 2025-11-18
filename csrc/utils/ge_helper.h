@@ -217,7 +217,7 @@ private:
     std::vector<std::any> values;
 };
 
-std::shared_ptr<StorageShape> CreateStorageShape(const std::vector<int64_t>& origin, 
+std::shared_ptr<gert::StorageShape> CreateStorageShape(const std::vector<int64_t>& origin, 
                                  const std::vector<int64_t>& storage) {
     
     if (origin.size() > 4 || origin.size() != storage.size()) {
