@@ -14,7 +14,6 @@
  * \brief
  */
 
-#include "torch_helper.h"
 #include "lightning_indexer_tiling.h"
 
 using namespace ge;
