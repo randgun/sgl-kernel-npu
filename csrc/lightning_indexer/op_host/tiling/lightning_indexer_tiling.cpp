@@ -299,13 +299,13 @@ ge::graphStatus LIInfoParser::GetAndCheckN2Size()
 {
     uint32_t n2Index = (kLayout_ == DataLayout::TND) ? DIM_IDX_ONE : DIM_IDX_TWO;
     n2Size_ = static_cast<uint32_t>(opParamInfo_.key.shape->GetStorageShape().GetDim(n2Index));
-    TORCH_CHECK(n2Size == 1, opName_, ": key shape", n2Index, " is numhead, only support 1.");
+    TORCH_CHECK(n2Size_ == 1, opName_, ": key shape", n2Index, " is numhead, only support 1.");
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus LIInfoParser::GetGSize()
 {
-    TORCH_CHECK(n1Size % n2Size == 0, opName_, ": input query's head_num ", n1Size_, " can not be a multiple of key's head_num ", n2Size_);
+    TORCH_CHECK(n1Size_ % n2Size_ == 0, opName_, ": input query's head_num ", n1Size_, " can not be a multiple of key's head_num ", n2Size_);
     gSize_ = n1Size_ / n2Size_;
     TORCH_CHECK(gSize_ == 64, opName_, ": N1 is ", n1Size_, ", N2 is ", n2Size_, ", N1 divided by N2 must equal 64.");
 

@@ -15,6 +15,8 @@ enum class ParamTypeCls : uint32_t {
     OPTIONAL,
 };
 using AttrTypeCls = ParamTypeCls;
+using REQUIRED = ParamTypeCls::REQUIRED;
+USING OPTIONAL = ParamTypeCls::OPTIONAL;
 
 #define MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalar_type)                                                                    \
     [&]() {                                                                                                            \
@@ -202,11 +204,11 @@ public:
     template <typename T>
     const T *GetAttrPointer(size_t index) const
     {
-        std::any anyValue = values[index];
+        std::any &anyValue = values[index];
         if (anyValue.type() != typeid(T)) {
             throw std::runtime_error("Invalid attribute type.");
         }
-        return &std::any_cast<T>(anyValue);
+        return &std::any_cast<T&>(anyValue);
     }
 
 private:
@@ -256,49 +258,49 @@ public:
         tensorPtr->push_back(geTensor);
     }
 
-    const std::shared_ptr<gert::CompileTimeTensorDesc> &GetInputDesc(uint32_t index) const
+    const gert::CompileTimeTensorDesc *GetInputDesc(uint32_t index) const
     {
-        return inputDesc_[index];
+        return inputDesc_[index].get();
     }
 
-    const std::shared_ptr<gert::StorageShape> &GetInputShape(uint32_t index) const
+    const gert::StorageShape *GetInputShape(uint32_t index) const
     {
-        return inputShape_[index];
+        return inputShape_[index].get();
     }
 
-    const std::shared_ptr<gert::Tensor> &GetInputTensor(uint32_t index) const
+    const gert::Tensor *GetInputTensor(uint32_t index) const
     {
-        return inputTensor_[index];
+        return inputTensor_[index].get();
     }
 
-    const std::shared_ptr<gert::CompileTimeTensorDesc> &GetOptionalInputDesc(uint32_t index) const
+    const gert::CompileTimeTensorDesc> *GetOptionalInputDesc(uint32_t index) const
     {
-        return inputDesc_[index];
+        return inputDesc_[index].get();
     }
 
-    const std::shared_ptr<gert::StorageShape> &GetOptionalInputShape(uint32_t index) const
+    const gert::StorageShape *GetOptionalInputShape(uint32_t index) const
     {
-        return inputShape_[index];
+        return inputShape_[index].get();
     }
 
-    const std::shared_ptr<gert::Tensor> &GetOptionalInputTensor(uint32_t index) const
+    const gert::Tensor *GetOptionalInputTensor(uint32_t index) const
     {
-        return inputTensor_[index];
+        return inputTensor_[index].get();
     }
 
-    const std::shared_ptr<gert::CompileTimeTensorDesc> &GetOutputDesc(uint32_t index) const
+    const gert::CompileTimeTensorDesc *GetOutputDesc(uint32_t index) const
     {
-        return outputDesc_[index];
+        return outputDesc_[index].get();
     }
 
-    const std::shared_ptr<gert::StorageShape> &GetOutputShape(uint32_t index) const
+    const gert::StorageShape *GetOutputShape(uint32_t index) const
     {
-        return outputShape_[index];
+        return outputShape_[index].get();
     }
 
-    const std::shared_ptr<gert::Tensor> &GetOutputTensor(uint32_t index) const
+    const gert::Tensor *GetOutputTensor(uint32_t index) const
     {
-        return outputTensor_[index];
+        return outputTensor_[index].get();
     }
 
     const char *GetNodeName() const
@@ -329,6 +331,17 @@ public:
     void SetAttrs(std::shared_ptr<RuntimeAttrs> runtimeAttrs)
     {
         runtimeAttrs_ = runtimeAttrs;
+    }
+
+    void SetWorkspaceSizes(size_t systemSize, size_t userSize)
+    {
+        *systemWorkSpaceSize_ = systemSize;
+        *userWorkSpaceSize_ = userSize;
+    }
+
+    size_t *GetWorkspaceSizes(size_t index)
+    {
+        return workSpaceSize_[index]
     }
 
     // Deleted, do not need to use these functions

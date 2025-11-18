@@ -43,7 +43,7 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     LIInfoParser LIInfoParser(context);
     TORCH_CHECK(LIInfoParser.ParseAndCheck(liInfo) == ge::GRAPH_SUCCESS, "lightning_indexer ParseAndCheck failed")
 
-    LightningIndexerTiling liTiling(context->get());
+    LightningIndexerTiling liTiling(context.get());
     liTiling.DoTiling(&liInfo);
     auto &tilingData = liTiling.GetTilingData();
 
@@ -56,14 +56,14 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
         TORCH_CHECK(actualCaptureNum < MAX_CAPTURE_NUM,
                     "lightning_indexer captureNum overflow")
         captureMap[bs] = actualCaptureNum;
-        aclmemcpy(globalTilingData.data_ptr<uint8_t>() + actualCaptureNum * tilingSize, tilingSize,
+        aclrtMemcpy(globalTilingData.data_ptr<uint8_t>() + actualCaptureNum * tilingSize, tilingSize,
                   &tilingData, tilingSize, ACL_MEMCPY_HOST_TO_DEVICE);
         actualCaptureNum++;
     }
     at::Tensor tilingTensor =
         at::from_blob(globalTilingData.data_ptr<uint8_t>() + (tilingSize * captureMap[bs]), tilingSize, at::kByte);
 
-    size_t userWorkspaceSize = context->GetWorkspaceSize(1);
+    size_t userWorkspaceSize = context->GetWorkspaceSizes(1);
     workspace =
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
     EXEC_KERNEL_CMD(lightning_indexer, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
