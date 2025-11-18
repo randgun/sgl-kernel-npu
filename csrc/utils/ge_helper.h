@@ -311,7 +311,7 @@ public:
 
     auto GetPlatformInfo()
     {
-        return platform_ascendc::PlatformAscendCManager::GetInstance();
+        return platformInfo_;
     }
 
     const std::shared_ptr<RuntimeAttrs> &GetAttrs() const
@@ -369,6 +369,7 @@ private:
     size_t systemWorkSpaceSize_ = 0;
     size_t userWorkSpaceSize_ = 0;
     std::vector<size_t *> workSpaceSize_{&systemWorkSpaceSize_, &userWorkSpaceSize_};
+    fe::PlatFormInfos *platformInfo_;
 };
 
 // TODO: Do automatic registery template class at compile time

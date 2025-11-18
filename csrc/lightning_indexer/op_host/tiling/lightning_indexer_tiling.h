@@ -18,7 +18,6 @@
 #define LIGHTNING_INDEXER_TILING_H_
 
 // #include "exe_graph/runtime/tiling_context.h"
-#include "tiling/platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
@@ -194,7 +193,7 @@ class LightningIndexerTiling
 public:
     explicit LightningIndexerTiling(ge_helper::TilingContext *context) : context_(context) {};
     ge::graphStatus DoTiling(LITilingInfo *tilingInfo);
-    LITilingData &GetTilingData() const;
+    const LITilingData &GetTilingData() const;
 
 private:
     ge_helper::TilingContext *context_ = nullptr;
