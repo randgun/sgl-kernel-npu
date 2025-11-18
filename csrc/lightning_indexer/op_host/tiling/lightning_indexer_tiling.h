@@ -24,6 +24,7 @@
 #include "tiling/tiling_api.h"
 #include "lightning_tiling_data.h"
 #include "ge_helper.h"
+#include "platform/platform_info.h"
 
 namespace sglang::LIHost {
 // ------------------公共定义--------------------------

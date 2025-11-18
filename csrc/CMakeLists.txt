@@ -74,4 +74,7 @@ target_include_directories(${OP_PLUGIN_NAME} PRIVATE
         ${TORCH_DIR}/include
         ${TORCH_DIR}/include/torch/csrc/api/include
         ${TORCH_NPU_DIR}/include
+        ${ASCEND_TOOLKIT_HOME}/include/external
+        ${ASCEND_TOOLKIT_HOME}/include/experiment/platform
+        ${ASCEND_TOOLKIT_HOME}/include/experiment/runtime
 )
