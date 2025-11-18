@@ -15,8 +15,8 @@ enum class ParamTypeCls : uint32_t {
     OPTIONAL,
 };
 using AttrTypeCls = ParamTypeCls;
-using REQUIRED = ParamTypeCls::REQUIRED;
-USING OPTIONAL = ParamTypeCls::OPTIONAL;
+constexpr auto REQUIRED = ParamTypeCls::REQUIRED;
+constexpr auto OPTIONAL = ParamTypeCls::OPTIONAL;
 
 #define MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalar_type)                                                                    \
     [&]() {                                                                                                            \
@@ -273,7 +273,7 @@ public:
         return inputTensor_[index].get();
     }
 
-    const gert::CompileTimeTensorDesc> *GetOptionalInputDesc(uint32_t index) const
+    const gert::CompileTimeTensorDesc *GetOptionalInputDesc(uint32_t index) const
     {
         return inputDesc_[index].get();
     }
@@ -335,11 +335,11 @@ public:
 
     void SetWorkspaceSizes(size_t systemSize, size_t userSize)
     {
-        *systemWorkSpaceSize_ = systemSize;
-        *userWorkSpaceSize_ = userSize;
+        systemWorkSpaceSize_ = systemSize;
+        userWorkSpaceSize_ = userSize;
     }
 
-    size_t *GetWorkspaceSizes(size_t index)
+    size_t *GetWorkspaceSizes(uint32_t index)
     {
         return workSpaceSize_[index]
     }
