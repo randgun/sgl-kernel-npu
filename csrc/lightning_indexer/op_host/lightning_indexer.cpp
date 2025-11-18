@@ -40,7 +40,7 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     context->RegisterTensor(sparse_indices, false);
 
     LITilingInfo liInfo;
-    LIInfoParser LIInfoParser(context);
+    LIInfoParser LIInfoParser(context.get());
     TORCH_CHECK(LIInfoParser.ParseAndCheck(liInfo) == ge::GRAPH_SUCCESS, "lightning_indexer ParseAndCheck failed")
 
     LightningIndexerTiling liTiling(context.get());

@@ -17,7 +17,7 @@
 #ifndef LIGHTNING_INDEXER_TILING_H_
 #define LIGHTNING_INDEXER_TILING_H_
 
-#include "exe_graph/runtime/tiling_context.h"
+// #include "exe_graph/runtime/tiling_context.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"

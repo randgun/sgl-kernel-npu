@@ -341,7 +341,7 @@ public:
 
     size_t *GetWorkspaceSizes(uint32_t index)
     {
-        return workSpaceSize_[index]
+        return workSpaceSize_[index];
     }
 
     // Deleted, do not need to use these functions
