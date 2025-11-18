@@ -140,8 +140,9 @@ public:
         if (valueInitialized_) {
             throw std::runtime_error("Cannot set default value for an attribute that has already been initialized.");
         }
-        defaultValue_ = value;
+        anyValue_ = value;
         valueInitialized_ = true;
+        isString_ = true;
         return *this;
     }
 
@@ -150,19 +151,31 @@ public:
         if (valueInitialized_) {
             throw std::runtime_error("Cannot set default value for an attribute that has already been initialized.");
         }
-        defaultValue_ = value;
+        anyValue_ = value;
         valueInitialized_ = true;
         return *this;
     }
 
-    std::any GetValue() const
+    const std::any GetValue() const
     {
-        return defaultValue_;
+        return anyValue_;
+    }
+
+    const std::string GetString() const
+    {
+        return strValue_;
+    }
+
+    bool IsString()
+    {
+        return isString_;
     }
 
 private:
     AttrTypeCls attrType_;      // REQUIRED or OPTIONAL
-    std::any defaultValue_;  // need C++17
+    std::any anyValue_;  // need C++17
+    bool isString_{false};
+    std::string strValue_;
     bool valueInitialized_ = false;
 };
 
@@ -243,47 +256,47 @@ public:
         tensorPtr->push_back(geTensor);
     }
 
-    std::shared_ptr<gert::CompileTimeTensorDesc> &GetInputDesc(uint32_t index) const
+    const std::shared_ptr<gert::CompileTimeTensorDesc> &GetInputDesc(uint32_t index) const
     {
         return inputDesc_[index];
     }
 
-    std::shared_ptr<gert::StorageShape> &GetInputShape(uint32_t index) const
+    const std::shared_ptr<gert::StorageShape> &GetInputShape(uint32_t index) const
     {
         return inputShape_[index];
     }
 
-    std::shared_ptr<gert::Tensor> &GetInputTensor(uint32_t index) const
+    const std::shared_ptr<gert::Tensor> &GetInputTensor(uint32_t index) const
     {
         return inputTensor_[index];
     }
 
-    std::shared_ptr<gert::CompileTimeTensorDesc> &GetOptionalInputDesc(uint32_t index) const
+    const std::shared_ptr<gert::CompileTimeTensorDesc> &GetOptionalInputDesc(uint32_t index) const
     {
         return inputDesc_[index];
     }
 
-    std::shared_ptr<gert::StorageShape> &GetOptionalInputShape(uint32_t index) const
+    const std::shared_ptr<gert::StorageShape> &GetOptionalInputShape(uint32_t index) const
     {
         return inputShape_[index];
     }
 
-    std::shared_ptr<gert::Tensor> &GetOptionalInputTensor(uint32_t index) const
+    const std::shared_ptr<gert::Tensor> &GetOptionalInputTensor(uint32_t index) const
     {
         return inputTensor_[index];
     }
 
-    std::shared_ptr<gert::CompileTimeTensorDesc> &GetOutputDesc(uint32_t index) const
+    const std::shared_ptr<gert::CompileTimeTensorDesc> &GetOutputDesc(uint32_t index) const
     {
         return outputDesc_[index];
     }
 
-    std::shared_ptr<gert::StorageShape> &GetOutputShape(uint32_t index) const
+    const std::shared_ptr<gert::StorageShape> &GetOutputShape(uint32_t index) const
     {
         return outputShape_[index];
     }
 
-    std::shared_ptr<gert::Tensor> &GetOutputTensor(uint32_t index) const
+    const std::shared_ptr<gert::Tensor> &GetOutputTensor(uint32_t index) const
     {
         return outputTensor_[index];
     }
@@ -298,7 +311,7 @@ public:
         return platform_ascendc::PlatformAscendCManager::GetInstance();
     }
 
-    std::shared_ptr<RuntimeAttrs> &GetAttrs() const
+    const std::shared_ptr<RuntimeAttrs> &GetAttrs() const
     {
         return runtimeAttrs_;
     }
@@ -317,8 +330,6 @@ public:
     {
         runtimeAttrs_ = runtimeAttrs;
     }
-
-    void SetWorkspaceSize
 
     // Deleted, do not need to use these functions
     void SetBlockDim(int blockDim) = delete;
@@ -399,8 +410,8 @@ public:
         }
         auto runtimeAttrs = std::make_shared<RuntimeAttrs>();
         for (auto &attr : attrs_) {
-            if (attr.second.GetValue().type() == typeid(std::string)) {
-                runtimeAttrs->SetStr(attr.second.GetValue());
+            if (attr.second.IsString()) {
+                runtimeAttrs->SetStr(attr.second.GetString());
                 runtimeAttrs->SetAny(std::any{});
             } else {
                 runtimeAttrs->SetAny(attr.second.GetValue());
