@@ -10,11 +10,11 @@
 namespace sglang {
 namespace ge_helper {
 
-enum class ParamType : uint32_t {
+enum class ParamTypeCls : uint32_t {
     REQUIRED = 0,
     OPTIONAL,
 };
-using AttrType = ParamType;
+using AttrTypeCls = ParamTypeCls;
 
 #define MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalar_type)                                                                    \
     [&]() {                                                                                                            \
@@ -53,7 +53,7 @@ using AttrType = ParamType;
 class InputDef
 {
 public:
-    InputDef &ParamType(ParamType type)
+    InputDef &ParamType(ParamTypeCls type)
     {
         paramType_ = type;
         return *this;
@@ -118,7 +118,7 @@ public:
     }
 
 private:
-    ParamType paramType_;
+    ParamTypeCls paramType_;
     std::vector<ge::DataType> dataTypes;
     std::vector<ge::Format> formats_;
     bool autoContiguous_ = false;
@@ -129,7 +129,7 @@ private:
 class AttrDef
 {
 public:
-    AttrDef &AttrType(AttrType type)
+    AttrDef &AttrType(AttrTypeCls type)
     {
         attrType_ = type;
         return *this;
@@ -161,78 +161,9 @@ public:
     }
 
 private:
-    AttrType attrType_;      // REQUIRED or OPTIONAL
+    AttrTypeCls attrType_;      // REQUIRED or OPTIONAL
     std::any defaultValue_;  // need C++17
     bool valueInitialized_ = false;
-};
-
-// TODO: Do automatic registery template class at compile time
-class OpDef
-{
-public:
-    explicit OpDef(const std::string &name) : opName_(name) {}
-
-    InputDef &Input(const std::string &name)
-    {
-        inputs_.emplace_back(name, InputDef());
-        return inputs_.back().second;
-    }
-
-    AttrDef &Attr(const std::string &name)
-    {
-        attrs_.emplace_back(name, AttrDef());
-        return attrs_.back().second;
-    }
-
-    InputDef &Output(const std::string &name)
-    {
-        outputs_.emplace_back(name, OutputDef());
-        return outputs_.back().second;
-    }
-
-    void SetToContext(std::shared_ptr<TilingContext> &context, at::ScalarType &scalarType)
-    {
-        auto geType = MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalarType);
-        auto &firstParamTypes = inputs_[0].second.GetDataTypes() uint32_t index = 0;
-        for (; index < firstParamTypes.size(); index++) {
-            if (firstParamTypes[index] == geType) {
-                break;
-            }
-        }
-        if (index == firstParamTypes.size()) {
-            throw std::runtime_error("Invalid input type, please check the definition file");
-        }
-
-        for (auto &input : inputs_) {
-            auto tensorDesc = std::make_shared<gert::CompileTimeTensorDesc>()
-                                  tensorDesc->SetDataType(input.second.GetDataType(index));
-            tensorDesc->SetOriginFormat(input.second.GetFormat(index));
-            context->AddInputDesc(tensorDesc);
-        }
-        for (auto &output : outputs_) {
-            auto tensorDesc = std::make_shared<gert::CompileTimeTensorDesc>()
-                                  tensorDesc->SetDataType(output.second.GetDataType(index));
-            tensorDesc->SetOriginFormat(output.second.GetFormat(index));
-            context->AddOutputDesc(tensorDesc);
-        }
-        auto runtimeAttrs = std::make_shared<RuntimeAttrs>();
-        for (auto &attr : attrs_) {
-            if (attr.second.GetValue().type() == typeid(std::string)) {
-                runtimeAttrs->SetStr(attr.second.GetValue());
-                runtimeAttrs->SetAny(std::any{});
-            } else {
-                runtimeAttrs->SetAny(attr.second.GetValue());
-                runtimeAttrs->SetStr("");
-            }
-        }
-        context->SetAttrs(runtimeAttrs);
-    }
-
-private:
-    std::string opName_;
-    std::vector<std::pair<std::string, InputDef>> inputs_;
-    std::vector<std::pair<std::string, InputDef>> outputs_;
-    std::vector<std::pair<std::string, AttrDef>> attrs_;
 };
 
 class RuntimeAttrs
@@ -389,9 +320,8 @@ public:
 
     void SetWorkspaceSize
 
-        // Deleted, do not need to use these functions
-        void
-        SetBlockDim(int blockDim) = delete;
+    // Deleted, do not need to use these functions
+    void SetBlockDim(int blockDim) = delete;
     void SetTilingKey(int tilingKey) = delete;
     size_t *GetWorkspaceSizes(uint32_t index) const = delete;
     gert::TilingData *GetRawTilingData() const = delete;
@@ -414,6 +344,77 @@ private:
     size_t systemWorkSpaceSize_ = 0;
     size_t userWorkSpaceSize_ = 0;
     std::vector<size_t *> workSpaceSize_{&systemWorkSpaceSize_, &userWorkSpaceSize_};
+};
+
+// TODO: Do automatic registery template class at compile time
+class OpDef
+{
+public:
+    using OutputDef = InputDef;
+    explicit OpDef(const std::string &name) : opName_(name) {}
+
+    InputDef &Input(const std::string &name)
+    {
+        inputs_.emplace_back(name, InputDef());
+        return inputs_.back().second;
+    }
+
+    AttrDef &Attr(const std::string &name)
+    {
+        attrs_.emplace_back(name, AttrDef());
+        return attrs_.back().second;
+    }
+
+    InputDef &Output(const std::string &name)
+    {
+        outputs_.emplace_back(name, OutputDef());
+        return outputs_.back().second;
+    }
+
+    void SetToContext(std::shared_ptr<TilingContext> &context, at::ScalarType &scalarType)
+    {
+        auto geType = MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalarType);
+        auto &firstParamTypes = inputs_[0].second.GetDataTypes();
+        uint32_t index = 0;
+        for (; index < firstParamTypes.size(); index++) {
+            if (firstParamTypes[index] == geType) {
+                break;
+            }
+        }
+        if (index == firstParamTypes.size()) {
+            throw std::runtime_error("Invalid input type, please check the definition file");
+        }
+
+        for (auto &input : inputs_) {
+            auto tensorDesc = std::make_shared<gert::CompileTimeTensorDesc>();
+            tensorDesc->SetDataType(input.second.GetDataType(index));
+            tensorDesc->SetOriginFormat(input.second.GetFormat(index));
+            context->AddInputDesc(tensorDesc);
+        }
+        for (auto &output : outputs_) {
+            auto tensorDesc = std::make_shared<gert::CompileTimeTensorDesc>();
+            tensorDesc->SetDataType(output.second.GetDataType(index));
+            tensorDesc->SetOriginFormat(output.second.GetFormat(index));
+            context->AddOutputDesc(tensorDesc);
+        }
+        auto runtimeAttrs = std::make_shared<RuntimeAttrs>();
+        for (auto &attr : attrs_) {
+            if (attr.second.GetValue().type() == typeid(std::string)) {
+                runtimeAttrs->SetStr(attr.second.GetValue());
+                runtimeAttrs->SetAny(std::any{});
+            } else {
+                runtimeAttrs->SetAny(attr.second.GetValue());
+                runtimeAttrs->SetStr("");
+            }
+        }
+        context->SetAttrs(runtimeAttrs);
+    }
+
+private:
+    std::string opName_;
+    std::vector<std::pair<std::string, InputDef>> inputs_;
+    std::vector<std::pair<std::string, InputDef>> outputs_;
+    std::vector<std::pair<std::string, AttrDef>> attrs_;
 };
 
 }  // namespace ge_helper
