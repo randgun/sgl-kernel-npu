@@ -17,8 +17,8 @@ using namespace ge_helper;
 constexpr uint32_t MAX_CAPTURE_NUM = 1024;
 uint32_t actualCaptureNum = 0;
 std::unordered_map<uint32_t, uint32_t> captureMap;
-at::tensor workspace;
-}  // namespace LIHost
+at::Tensor workspace;
+
 
 HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
                                 const at::Tensor &actual_seq_lengths_q, const at::Tensor &actual_seq_lengths,
@@ -50,23 +50,24 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     uint32_t tilingSize = sizeof(LITilingData);
     auto bs = query.sizes()[0];
 
-    static auto globalTilingData = at::empty({tilingSize * LIHost::MAX_CAPTURE_NUM},
+    static auto globalTilingData = at::empty({tilingSize * MAX_CAPTURE_NUM},
                                              at::TensorOptions().dtype(at::kByte).device(query.options().device()));
     if (captureMap.find(bs) == captureMap.end()) {
-        TORCH_CHECK(LIHost::actureCaptureNum < LIHost::MAX_CAPTURE_NUM,
+        TORCH_CHECK(actualCaptureNum < MAX_CAPTURE_NUM,
                     "lightning_indexer captureNum overflow")
-        captureMap[bs] = LIHost::actureCaptureNum;
-        aclmemcpy(globalTilingData.data_ptr<uint8_t>() + LIHost::actureCaptureNum * tilingSize, tilingSize,
+        captureMap[bs] = actualCaptureNum;
+        aclmemcpy(globalTilingData.data_ptr<uint8_t>() + actualCaptureNum * tilingSize, tilingSize,
                   &tilingData, tilingSize, ACL_MEMCPY_HOST_TO_DEVICE);
-        LIHost::actureCaptureNum++;
+        actualCaptureNum++;
     }
     at::Tensor tilingTensor =
         at::from_blob(globalTilingData.data_ptr<uint8_t>() + (tilingSize * captureMap[bs]), tilingSize, at::kByte);
 
     size_t userWorkspaceSize = context->GetWorkspaceSize(1);
-    LIHost::workspace =
+    workspace =
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
     EXEC_KERNEL_CMD(lightning_indexer, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
                     sparse_indices, workspace, tilingTensor);
 }
+}  // namespace LIHost
 }  // namespace sglang

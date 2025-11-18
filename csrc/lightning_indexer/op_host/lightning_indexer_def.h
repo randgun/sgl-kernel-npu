@@ -18,7 +18,7 @@
 
 namespace sglang {
 namespace LIHost {
-
+using namespace ge_helper;
 class LightningIndexer : public OpDef
 {
 public:
