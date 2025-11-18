@@ -202,13 +202,14 @@ public:
     }
 
     template <typename T>
-    const T *GetAttrPointer(size_t index) const
+    const T *GetAttrPointer(size_t index)
     {
         std::any &anyValue = values[index];
-        if (anyValue.type() != typeid(T)) {
+        try {
+            return &std::any_cast<const T&>(anyValue);
+        } catch (const std::bad_any_cast&) {
             throw std::runtime_error("Invalid attribute type.");
         }
-        return &std::any_cast<T&>(anyValue);
     }
 
 private:

@@ -45,7 +45,7 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
 
     LightningIndexerTiling liTiling(context.get());
     liTiling.DoTiling(&liInfo);
-    auto &tilingData = liTiling.GetTilingData();
+    const auto &tilingData = liTiling.GetTilingData();
 
     uint32_t tilingSize = sizeof(LITilingData);
     auto bs = query.sizes()[0];

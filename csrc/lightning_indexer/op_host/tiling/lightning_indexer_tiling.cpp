@@ -617,7 +617,7 @@ ge::graphStatus LightningIndexerTiling::DoTiling(LITilingInfo *tilingInfo)
     return ge::GRAPH_SUCCESS;
 }
 
-LITilingData &LightningIndexerTiling::GetTilingData() const
+const LITilingData &LightningIndexerTiling::GetTilingData() const
 {
     return tilingData_;
 }
