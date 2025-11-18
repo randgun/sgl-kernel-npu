@@ -1,6 +1,6 @@
 #ifndef SGLANG_KERNEL_GE_HELPER_H
 #define SGLANG_KERNEL_GE_HELPER_H
-#include <stdint>
+#include <cstdint>
 #include <vector>
 #include <any>
 #include <map>

@@ -22,7 +22,8 @@
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
-#include "../op_host/tiling/lightning_tiling_data.h"
+#include "lightning_tiling_data.h"
+#include "ge_helper.h"
 
 namespace sglang::LIHost {
 // ------------------公共定义--------------------------

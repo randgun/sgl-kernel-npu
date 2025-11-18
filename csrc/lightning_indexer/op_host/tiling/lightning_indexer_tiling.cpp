@@ -14,6 +14,7 @@
  * \brief
  */
 
+#include "torch_helper.h"
 #include "lightning_indexer_tiling.h"
 
 using namespace ge;
@@ -30,8 +31,8 @@ ge::graphStatus LIInfoParser::CheckRequiredInOutExistence() const
     TORCH_CHECK(opParamInfo_.query.desc != nullptr, OPS_LOG_E(opName_, "Desc of tensor query is nullptr"));
     TORCH_CHECK(opParamInfo_.key.shape != nullptr, OPS_LOG_E(opName_, "Shape of tensor key is nullptr"));
     TORCH_CHECK(opParamInfo_.key.desc != nullptr, OPS_LOG_E(opName_, "Desc of tensor key is nullptr"));
-    TORCH_CHECK(opParamInfo_weights.shape != nullptr, OPS_LOG_E(opName_, "Shape of tensor weights is nullptr"));
-    TORCH_CHECK(opParamInfo_weights.desc != nullptr, OPS_LOG_E(opName_, "Desc of tensor weights is nullptr"));
+    TORCH_CHECK(opParamInfo_.weights.shape != nullptr, OPS_LOG_E(opName_, "Shape of tensor weights is nullptr"));
+    TORCH_CHECK(opParamInfo_.weights.desc != nullptr, OPS_LOG_E(opName_, "Desc of tensor weights is nullptr"));
     TORCH_CHECK(opParamInfo_.attenOut.shape != nullptr, OPS_LOG_E(opName_, "Shape of tensor attenOut is nullptr"));
     TORCH_CHECK(opParamInfo_.attenOut.desc != nullptr, OPS_LOG_E(opName_, "Desc of tensor attenOut is nullptr"));
 
@@ -76,7 +77,7 @@ ge::graphStatus LIInfoParser::GetNpuInfo()
 
     socVersion_ = ascendcPlatform.GetSocVersion();
     TORCH_CHECK(socVersion_ == platform_ascendc::SocVersion::ASCEND910B ||
-                    socVersion_ == platform_ascendc::SocVersion::ASCEND310P3,
+                    socVersion_ == platform_ascendc::SocVersion::ASCEND910_93,
                 OPS_LOG_E(opName_, "soc version does not support "), (int32_t)socVersion_);
 
     TORCH_CHECK(context_->GetWorkspaceSizes(1) != nullptr, OPS_LOG_E(opName_, "workspaceSize got from ge is nullptr"));
@@ -298,21 +299,15 @@ ge::graphStatus LIInfoParser::GetAndCheckN2Size()
 {
     uint32_t n2Index = (kLayout_ == DataLayout::TND) ? DIM_IDX_ONE : DIM_IDX_TWO;
     n2Size_ = static_cast<uint32_t>(opParamInfo_.key.shape->GetStorageShape().GetDim(n2Index));
-    // OPS_LOG_I(context_->GetNodeName(), "n2Size_ is %d", n2Size_);
-    TORCH_CHECK(nsSize == 1, opName_, ": key shape", n2Index, " is numhead, only support 1.");
+    TORCH_CHECK(n2Size == 1, opName_, ": key shape", n2Index, " is numhead, only support 1.");
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus LIInfoParser::GetGSize()
 {
-    if (n1Size_ % n2Size_ != 0) {
-        OPS_LOG_E(opName_, "input query's head_num %u can not be a multiple of key's head_num %u.", n1Size_, n2Size_);
-        return ge::GRAPH_FAILED;
-    }
+    TORCH_CHECK(n1Size % n2Size == 0, opName_, ": input query's head_num ", n1Size_, " can not be a multiple of key's head_num ", n2Size_);
     gSize_ = n1Size_ / n2Size_;
-    TORCH_CHECK(gSize_ == 64,
-                OPS_LOG_E(opName_, "N1 is %u, N2 is %u, N1 divided by N2 must equal 64.", n1Size_, n2Size_),
-                return ge::GRAPH_FAILED);
+    TORCH_CHECK(gSize_ == 64, opName_, ": N1 is ", n1Size_, ", N2 is ", n2Size_, ", N1 divided by N2 must equal 64.");
 
     return ge::GRAPH_SUCCESS;
 }
@@ -345,7 +340,6 @@ ge::graphStatus LIInfoParser::GetHeadDim()
             dIndex = DIM_IDX_THREE;
             break;
         default:
-            OPS_LOG_E(opName_, "unsupported layout for getting head dim.");
             return ge::GRAPH_FAILED;
     }
     headDim_ = opParamInfo_.query.shape->GetStorageShape().GetDim(dIndex);
@@ -389,9 +383,7 @@ ge::graphStatus LIInfoParser::GetS2SizeForPageAttention()
     }
     maxBlockNumPerBatch_ = opParamInfo_.blockTable.tensor->GetStorageShape().GetDim(1);
     s2Size_ = maxBlockNumPerBatch_ * blockSize_;
-    // OPS_LOG_I(context_->GetNodeName(), "maxBlockNumPerBatch_ is %d, blockSize_ is %d, s2Size_ is %d",
-              maxBlockNumPerBatch_, blockSize_, s2Size_);
-              return ge::GRAPH_SUCCESS;
+    return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus LIInfoParser::GetS2Size()
@@ -612,13 +604,13 @@ ge::graphStatus LightningIndexerTiling::DoTiling(LITilingInfo *tilingInfo)
         .n2Size = tilingInfo->n2Size,
         .gSize = tilingInfo->gSize,
         .s1Size = tilingInfo->s1Size,
-        .s2Size = tilingInfo->s2Size,
+        .s2Size = static_cast<uint32_t>(tilingInfo->s2Size),
         .sparseCount = tilingInfo->sparseCount,
         .usedCoreNum = blockDim,
         .blockSize = tilingInfo->blockSize,
         .maxBlockNumPerBatch = tilingInfo->maxBlockNumPerBatch,
         .sparseMode = tilingInfo->sparseMode,
-        .tilingKey = tilingInfo->tilingKey,
+        .tilingKey = tilingKey,
     };
 
     tilingData_ = tilingData;
