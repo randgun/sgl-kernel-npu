@@ -1,6 +1,6 @@
 # set the library output dir to the python dir for wheel package build
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/python/sgl_kernel_npu/sgl_kernel_npu/lib)
-
+set(ASCEND_INCLUDE_DIR /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/include)
 # host side files
 FILE(GLOB OP_SRCS
     ${PROJECT_OP_SRC_BASE}/pytorch_extensions.cpp
@@ -74,7 +74,7 @@ target_include_directories(${OP_PLUGIN_NAME} PRIVATE
         ${TORCH_DIR}/include
         ${TORCH_DIR}/include/torch/csrc/api/include
         ${TORCH_NPU_DIR}/include
-        ${ASCEND_TOOLKIT_HOME}/include/external
-        ${ASCEND_TOOLKIT_HOME}/include/experiment/platform
-        ${ASCEND_TOOLKIT_HOME}/include/experiment/runtime
+        ${ASCEND_TOOLKIT_HOME}/external
+        ${ASCEND_TOOLKIT_HOME}/experiment/platform
+        ${ASCEND_TOOLKIT_HOME}/experiment/runtime
 )
