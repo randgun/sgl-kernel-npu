@@ -48,6 +48,7 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     const auto &tilingData = liTiling.GetTilingData();
 
     uint32_t tilingSize = sizeof(LITilingData);
+    auto blockDim = tilingData.usedCoreNum;
     auto bs = query.sizes()[0];
 
     static auto globalTilingData = at::empty({tilingSize * MAX_CAPTURE_NUM},
@@ -66,7 +67,7 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     size_t userWorkspaceSize = *context->GetWorkspaceSizes(1);
     workspace =
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
-    EXEC_KERNEL_CMD(lightning_indexer, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
+    EXEC_KERNEL_CMD(lightning_indexer, blockDim, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
                     sparse_indices, workspace, tilingTensor);
 }
 }  // namespace LIHost
