@@ -272,7 +272,7 @@ public:
         // storageFormat == originFormat
         auto storageFormat = (*descPtr)[index]->GetOriginFormat();
         auto dataType = (*descPtr)[index]->GetDataType();
-        auto geTensor = std::make_shared<gert::Tensor>(*(storageShape.get()), *(storageFormat.get()), dataType);
+        auto geTensor = std::make_shared<gert::Tensor>(*(storageShape.get()), storageFormat, dataType);
         tensorPtr->push_back(geTensor);
     }
 
