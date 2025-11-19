@@ -270,7 +270,8 @@ public:
 
         auto index = descPtr->size() - 1;
         // storageFormat == originFormat
-        auto storageFormat = (*descPtr)[index]->GetOriginFormat();
+        auto geOriginFormat = (*descPtr)[index]->GetOriginFormat();
+        auto storageFormat = gert::StorageFormat(geOriginFormat, geOriginFormat, gert::ExpandDimsType());
         auto dataType = (*descPtr)[index]->GetDataType();
         auto geTensor = std::make_shared<gert::Tensor>(*(storageShape.get()), storageFormat, dataType);
         tensorPtr->push_back(geTensor);
