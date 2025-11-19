@@ -217,20 +217,20 @@ private:
     std::vector<std::any> values;
 };
 
-std::shared_ptr<gert::StorageShape> CreateStorageShape(const std::vector<int64_t>& origin, 
+gert::StorageShape CreateStorageShape(const std::vector<int64_t>& origin, 
                                  const std::vector<int64_t>& storage) {
     
     if (origin.size() > 4 || origin.size() != storage.size()) {
         throw std::invalid_argument("Unsupported vector size");
     }
     switch (origin.size()) {
-        case 0: return std::make_shared<gert::StorageShape>(new gert::StorageShape({}, {}));
-        case 1: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0]}, {storage[0]}));
-        case 2: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0], origin[1]}, {storage[0], storage[1]}));
-        case 3: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0], origin[1], origin[2]}, 
-                           {storage[0], storage[1], storage[2]}));
-        case 4: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
-                           {storage[0], storage[1], storage[2], storage[3]}));
+        case 0: return gert::StorageShape({}, {});
+        case 1: return gert::StorageShape({origin[0]}, {storage[0]});
+        case 2: return gert::StorageShape({origin[0], origin[1]}, {storage[0], storage[1]});
+        case 3: return gert::StorageShape({origin[0], origin[1], origin[2]}, 
+                           {storage[0], storage[1], storage[2]});
+        case 4: return gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
+                           {storage[0], storage[1], storage[2], storage[3]});
     }
 }
 
@@ -243,7 +243,7 @@ public:
     {
         // convert to gert::Tensor and add to inputTensor_
         // get shape and convert to gert::StorageShape, then add to inputShape_
-        std::vector<std::shared_ptr<gert::StorageShape>> *shapePtr;
+        std::vector<gert::StorageShape> *shapePtr;
         std::vector<std::shared_ptr<gert::Tensor>> *tensorPtr;
         std::vector<std::shared_ptr<gert::CompileTimeTensorDesc>> *descPtr;
 
@@ -261,7 +261,7 @@ public:
         std::vector<int64_t> shapeVec(shape.begin(), shape.end());
 
         auto storageShape = CreateStorageShape(shapeVec, shapeVec);
-        shapePtr->push_back(storageShape);
+        shapePtr->emplace_back(std::move(storageShape));
 
         // Safety check to avoid underflow
         if (descPtr->empty()) {
@@ -273,7 +273,7 @@ public:
         auto geOriginFormat = (*descPtr)[index]->GetOriginFormat();
         auto storageFormat = gert::StorageFormat(geOriginFormat, geOriginFormat, gert::ExpandDimsType());
         auto dataType = (*descPtr)[index]->GetDataType();
-        auto geTensor = std::make_shared<gert::Tensor>(*(storageShape.get()), storageFormat, dataType);
+        auto geTensor = std::make_shared<gert::Tensor>(shapePtr->back(), storageFormat, dataType);
         tensorPtr->push_back(geTensor);
     }
 
@@ -379,8 +379,8 @@ private:
     // init from constructor
     std::vector<std::shared_ptr<gert::Tensor>> inputTensor_;
     std::vector<std::shared_ptr<gert::Tensor>> outputTensor_;
-    std::vector<std::shared_ptr<gert::StorageShape>> inputShape_;
-    std::vector<std::shared_ptr<gert::StorageShape>> outputShape_;
+    std::vector<gert::StorageShape> inputShape_;
+    std::vector<gert::StorageShape> outputShape_;
 
     std::string nodeName_;
     gert::TilingData *rawTilingData_ = nullptr;
