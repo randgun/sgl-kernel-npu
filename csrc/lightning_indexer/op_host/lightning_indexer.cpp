@@ -66,7 +66,7 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     size_t userWorkspaceSize = *context->GetWorkspaceSizes(1);
     workspace =
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
-    npu_kernel::EXEC_KERNEL_CMD(lightning_indexer, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
+    EXEC_KERNEL_CMD(lightning_indexer, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
                     sparse_indices, workspace, tilingTensor);
 }
 }  // namespace LIHost

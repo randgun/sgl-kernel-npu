@@ -55,6 +55,8 @@ public:
         return std::make_tuple(ConvertType(args)...);
     }
 };
+}  // namespace npu_kernel
+}  // namespace sglang
 
 /**
  * @brief Launch real kernel function on NPU
@@ -65,7 +67,7 @@ public:
 #define EXEC_KERNEL_CMD(kernel_name, blockdim, ...)                         \
     do {                                                                    \
         auto acl_stream = c10_npu::getCurrentNPUStream().stream(false);     \
-        auto converted_params = TorchNpuHepler::ConvertTypes(__VA_ARGS__);  \
+        auto converted_params = sglang::npu_kernel::TorchNpuHepler::ConvertTypes(__VA_ARGS__);  \
         auto acl_call = [acl_stream, blockdim, converted_params]() -> int { \
             std::apply(                                                     \
                 [&](auto &&...params) {                                     \
@@ -77,7 +79,5 @@ public:
         };                                                                  \
         at_npu::native::OpCommand::RunOpApi(#kernel_name, acl_call);        \
     } while (false)
-}  // namespace npu_kernel
-}  // namespace sglang
 
 #endif  // SGL_KERNEL_NPU_TORCH_NPU_HELPER_H

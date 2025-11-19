@@ -232,6 +232,7 @@ gert::StorageShape CreateStorageShape(const std::vector<int64_t>& origin,
         case 4: return gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
                            {storage[0], storage[1], storage[2], storage[3]});
     }
+    return gert::StorageShape({}, {});
 }
 
 class TilingContext
