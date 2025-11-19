@@ -66,7 +66,7 @@ ge::graphStatus LIInfoParser::GetOpName()
 
 ge::graphStatus LIInfoParser::GetNpuInfo()
 {
-    auto ascendcPlatform = platform_ascendc::PlatformAscendCManager::GetInstance();
+    auto ascendcPlatform = *platform_ascendc::PlatformAscendCManager::GetInstance();
     uint32_t aivNum = ascendcPlatform.GetCoreNumAiv();
     uint32_t aicNum = ascendcPlatform.GetCoreNumAic();
     TORCH_CHECK(aivNum != 0 && aivNum != 0, OPS_LOG_E(opName_, "num of core obtained is 0"));
@@ -487,7 +487,6 @@ ge::graphStatus LIInfoParser::ValidateInputShapesMatch()
 void LIInfoParser::GenerateInfo(LITilingInfo &liInfo)
 {
     liInfo.opName = opName_;
-    liInfo.platformInfo = platformInfo_;
     liInfo.opParamInfo = opParamInfo_;
     liInfo.socVersion = socVersion_;
 
@@ -554,7 +553,7 @@ static ge::graphStatus TilingPrepareForLightningIndexer(gert::TilingParseContext
 ge::graphStatus LightningIndexerTiling::DoTiling(LITilingInfo *tilingInfo)
 {
     // -------------set blockdim-----------------
-    auto ascendcPlatform = platform_ascendc::PlatformAscendCManager::GetInstance();
+    auto ascendcPlatform = *platform_ascendc::PlatformAscendCManager::GetInstance();
     uint32_t aivNum = ascendcPlatform.GetCoreNumAiv();
     uint32_t aicNum = ascendcPlatform.GetCoreNumAic();
     uint32_t blockDim = ascendcPlatform.CalcTschBlockDim(aivNum, aicNum, aivNum);
