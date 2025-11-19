@@ -11,7 +11,7 @@
 #include "lightning_indexer_def.h"
 #include "aclrtlaunch_lightning_indexer.h"
 
-namespace sglang:LIHost {
+namespace sglang::LIHost {
 
 using namespace ge_helper;
 constexpr uint32_t MAX_CAPTURE_NUM = 1024;
