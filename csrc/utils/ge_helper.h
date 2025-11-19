@@ -284,7 +284,7 @@ public:
 
     const gert::StorageShape *GetInputShape(uint32_t index) const
     {
-        return inputShape_[index].get();
+        return &inputShape_[index];
     }
 
     const gert::Tensor *GetInputTensor(uint32_t index) const
@@ -299,7 +299,7 @@ public:
 
     const gert::StorageShape *GetOptionalInputShape(uint32_t index) const
     {
-        return inputShape_[index].get();
+        return &inputShape_[index];
     }
 
     const gert::Tensor *GetOptionalInputTensor(uint32_t index) const
@@ -314,7 +314,7 @@ public:
 
     const gert::StorageShape *GetOutputShape(uint32_t index) const
     {
-        return outputShape_[index].get();
+        return &outputShape_[index];
     }
 
     const gert::Tensor *GetOutputTensor(uint32_t index) const
