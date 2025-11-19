@@ -22,7 +22,8 @@ at::Tensor workspace;
 
 HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
                                 const at::Tensor &actual_seq_lengths_q, const at::Tensor &actual_seq_lengths,
-                                const at::Tensor &blocktable, at::Tensor &sparse_indices)
+                                const at::Tensor &blocktable, c10::optional<c10::string_view> layout_query,
+                                c10::optional<c10::string_view> layout_key, at::Tensor &sparse_indices)
 {
     LightningIndexer indexer("lightning_indexer");
     auto context = std::make_shared<TilingContext>("lightning_indexer");

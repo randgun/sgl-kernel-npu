@@ -55,7 +55,7 @@ public:
             .FormatList({ge::FORMAT_ND})
             .AutoContiguous();
         this->Output("sparse_indices").ParamType(REQUIRED).DataTypeList({ge::DT_INT32}).FormatList({ge::FORMAT_ND});
-        this->Attr("layout_query").AttrType(OPTIONAL).String("BSND");
+        this->Attr("layout_query").AttrType(OPTIONAL).String("TND");
         this->Attr("layout_key").AttrType(OPTIONAL).String("PA_BSND");
         this->Attr("sparse_count").AttrType(OPTIONAL).Int(2048);  // 2048:默认值，筛选前2048
         this->Attr("sparse_mode").AttrType(OPTIONAL).Int(3);      // 3:默认值，只计算下三角

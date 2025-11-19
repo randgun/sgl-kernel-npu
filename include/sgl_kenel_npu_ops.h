@@ -94,6 +94,8 @@ void lightning_indexer(const at::Tensor &query, const at::Tensor &key,
                        const at::Tensor &actual_seq_lengths_q,
                        const at::Tensor &actual_seq_lengths,
                        const at::Tensor &blocktable,
+                       c10::optional<c10::string_view> layout_query,
+                       c10::optional<c10::string_view> layout_key,
                        at::Tensor &sparse_indices);
 
 } // namespace npu_kernel
