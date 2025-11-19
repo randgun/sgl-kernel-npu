@@ -7,17 +7,6 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "torch_helper.h"
 
-namespace sglang {
-namespace ge_helper {
-
-enum class ParamTypeCls : uint32_t {
-    REQUIRED = 0,
-    OPTIONAL,
-};
-using AttrTypeCls = ParamTypeCls;
-constexpr auto REQUIRED = ParamTypeCls::REQUIRED;
-constexpr auto OPTIONAL = ParamTypeCls::OPTIONAL;
-
 #define MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalar_type)                                                                    \
     [&]() {                                                                                                            \
         switch (scalar_type) {                                                                                         \
@@ -51,6 +40,18 @@ constexpr auto OPTIONAL = ParamTypeCls::OPTIONAL;
                 throw std::runtime_error("Unsupported scalar type: " + std::to_string(static_cast<int>(scalar_type))); \
         }                                                                                                              \
     }()
+namespace sglang {
+namespace ge_helper {
+
+enum class ParamTypeCls : uint32_t {
+    REQUIRED = 0,
+    OPTIONAL,
+};
+using AttrTypeCls = ParamTypeCls;
+constexpr auto REQUIRED = ParamTypeCls::REQUIRED;
+constexpr auto OPTIONAL = ParamTypeCls::OPTIONAL;
+gert::StorageShape CreateStorageShape(const std::vector<int64_t>& origin, 
+                                    const std::vector<int64_t>& storage);
 
 class InputDef
 {
@@ -92,7 +93,7 @@ public:
         return *this;
     }
 
-    ge::DataType GetDataType(uint32_t index) const
+    const ge::DataType GetDataType(uint32_t index) const
     {
         if (useDataTypeList_) {
             return dataTypes[0];
@@ -108,7 +109,7 @@ public:
         return dataTypes;
     }
 
-    ge::Format GetFormat(uint32_t index) const
+    const ge::Format GetFormat(uint32_t index) const
     {
         if (useFormatList_) {
             return formats_[0];
@@ -310,11 +311,6 @@ public:
         return nodeName_.c_str();
     }
 
-    auto GetPlatformInfo()
-    {
-        return platformInfo_;
-    }
-
     const std::shared_ptr<RuntimeAttrs> &GetAttrs() const
     {
         return runtimeAttrs_;
@@ -349,27 +345,9 @@ public:
     // Deleted, do not need to use these functions
     void SetBlockDim(int blockDim) = delete;
     void SetTilingKey(int tilingKey) = delete;
-    size_t *GetWorkspaceSizes(uint32_t index) const = delete;
     gert::TilingData *GetRawTilingData() const = delete;
 
 private:
-    static gert::StorageShape CreateStorageShape(const std::vector<int64_t>& origin, 
-                                    const std::vector<int64_t>& storage) {
-        
-        if (origin.size() > 4 || origin.size() != storage.size()) {
-            throw std::invalid_argument("Unsupported vector size");
-        }
-        switch (origin.size()) {
-            case 0: return gert::StorageShape({}, {});
-            case 1: return gert::StorageShape({origin[0]}, {storage[0]});
-            case 2: return gert::StorageShape({origin[0], origin[1]}, {storage[0], storage[1]});
-            case 3: return gert::StorageShape({origin[0], origin[1], origin[2]}, 
-                            {storage[0], storage[1], storage[2]});
-            case 4: return gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
-                            {storage[0], storage[1], storage[2], storage[3]});
-        }
-        return gert::StorageShape({}, {});
-    }
     // init from user definition
     // input include input and optional input (for adapt aclnn)
     std::vector<std::shared_ptr<gert::CompileTimeTensorDesc>> inputDesc_;
@@ -387,7 +365,6 @@ private:
     size_t systemWorkSpaceSize_ = 0;
     size_t userWorkSpaceSize_ = 0;
     std::vector<size_t *> workSpaceSize_{&systemWorkSpaceSize_, &userWorkSpaceSize_};
-    fe::PlatFormInfos *platformInfo_;
 };
 
 // TODO: Do automatic registery template class at compile time
@@ -418,30 +395,35 @@ public:
     void SetToContext(std::shared_ptr<TilingContext> &context, at::ScalarType &scalarType)
     {
         auto geType = MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalarType);
-        auto &firstParamTypes = inputs_[0].second.GetDataTypes();
-        uint32_t index = 0;
-        for (; index < firstParamTypes.size(); index++) {
-            if (firstParamTypes[index] == geType) {
-                break;
-            }
+        if (inputs_.empty()) {
+            throw std::runtime_error("Check the op definition file");
         }
-        if (index == firstParamTypes.size()) {
-            throw std::runtime_error("Invalid input type, please check the definition file");
+        const auto &firstParamTypes = inputs_[0].second.GetDataTypes();
+        auto it = std::find(firstParamTypes.begin(), firstParamTypes.end(), geType);
+        if (it == firstParamTypes.end()) {
+            throw std::runtime_error("Invalid input type, please check the op definition file");
         }
+        uint32_t index = std::distance(firstParamTypes.begin(), it);
 
+        context->inputDesc_.reserve(inputs_.size());
+        context->outputDesc_.reserve(outputs_.size());
         for (auto &input : inputs_) {
             auto tensorDesc = std::make_shared<gert::CompileTimeTensorDesc>();
             tensorDesc->SetDataType(input.second.GetDataType(index));
             tensorDesc->SetOriginFormat(input.second.GetFormat(index));
             context->AddInputDesc(tensorDesc);
         }
+
         for (auto &output : outputs_) {
             auto tensorDesc = std::make_shared<gert::CompileTimeTensorDesc>();
             tensorDesc->SetDataType(output.second.GetDataType(index));
             tensorDesc->SetOriginFormat(output.second.GetFormat(index));
             context->AddOutputDesc(tensorDesc);
         }
+
         auto runtimeAttrs = std::make_shared<RuntimeAttrs>();
+        runtimeAttrs->values.reserve(attrs_.size());
+        runtimeAttrs->strValues.reserve(attrs_.size());
         for (auto &attr : attrs_) {
             if (attr.second.IsString()) {
                 runtimeAttrs->SetStr(attr.second.GetString());
@@ -461,6 +443,23 @@ private:
     std::vector<std::pair<std::string, AttrDef>> attrs_;
 };
 
+inline gert::StorageShape CreateStorageShape(const std::vector<int64_t>& origin, 
+                                    const std::vector<int64_t>& storage)
+{        
+    if (origin.size() > 4 || origin.size() != storage.size()) {
+        throw std::invalid_argument("Unsupported vector size");
+    }
+    switch (origin.size()) {
+        case 0: return gert::StorageShape({}, {});
+        case 1: return gert::StorageShape({origin[0]}, {storage[0]});
+        case 2: return gert::StorageShape({origin[0], origin[1]}, {storage[0], storage[1]});
+        case 3: return gert::StorageShape({origin[0], origin[1], origin[2]}, 
+                        {storage[0], storage[1], storage[2]});
+        case 4: return gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
+                        {storage[0], storage[1], storage[2], storage[3]});
+    }
+    return gert::StorageShape({}, {});
+}
 }  // namespace ge_helper
 }  // namespace sglang
 #endif

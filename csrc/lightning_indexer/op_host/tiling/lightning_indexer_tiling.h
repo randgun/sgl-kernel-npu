@@ -91,7 +91,6 @@ class LITilingInfo
 {
 public:
     const char *opName = nullptr;
-    fe::PlatFormInfos *platformInfo = nullptr;
     LiParaInfo opParamInfo;
     // Base Param
     platform_ascendc::SocVersion socVersion = platform_ascendc::SocVersion::ASCEND910B;

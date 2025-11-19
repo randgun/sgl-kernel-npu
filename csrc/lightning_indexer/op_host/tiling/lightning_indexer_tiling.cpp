@@ -66,10 +66,7 @@ ge::graphStatus LIInfoParser::GetOpName()
 
 ge::graphStatus LIInfoParser::GetNpuInfo()
 {
-    platformInfo_ = context_->GetPlatformInfo();
-    TORCH_CHECK(platformInfo_ != nullptr, OPS_LOG_E(opName_, "platformInfo got from TilingContext is nullptr"));
-
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo_);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendCManager::GetInstance();
     uint32_t aivNum = ascendcPlatform.GetCoreNumAiv();
     uint32_t aicNum = ascendcPlatform.GetCoreNumAic();
     TORCH_CHECK(aivNum != 0 && aivNum != 0, OPS_LOG_E(opName_, "num of core obtained is 0"));
@@ -557,7 +554,7 @@ static ge::graphStatus TilingPrepareForLightningIndexer(gert::TilingParseContext
 ge::graphStatus LightningIndexerTiling::DoTiling(LITilingInfo *tilingInfo)
 {
     // -------------set blockdim-----------------
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(tilingInfo->platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendCManager::GetInstance();
     uint32_t aivNum = ascendcPlatform.GetCoreNumAiv();
     uint32_t aicNum = ascendcPlatform.GetCoreNumAic();
     uint32_t blockDim = ascendcPlatform.CalcTschBlockDim(aivNum, aicNum, aivNum);
