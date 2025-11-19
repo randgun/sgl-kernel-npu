@@ -189,23 +189,23 @@ public:
 
     void SetStr(const std::string &value)
     {
-        strValues.push_back(value);
+        strValues_.push_back(value);
     }
 
     void SetAny(const std::any &value)
     {
-        values.push_back(value);
+        anyValues_.push_back(value);
     }
 
     const char *GetStr(const size_t index) const
     {
-        return strValues[index].c_str();
+        return strValues_[index].c_str();
     }
 
     template <typename T>
     const T *GetAttrPointer(size_t index)
     {
-        std::any &anyValue = values[index];
+        std::any &anyValue = anyValues_[index];
         try {
             return &std::any_cast<const T&>(anyValue);
         } catch (const std::bad_any_cast&) {
@@ -214,8 +214,8 @@ public:
     }
 
 private:
-    std::vector<std::string> strValues;
-    std::vector<std::any> values;
+    std::vector<std::string> strValues_;
+    std::vector<std::any> anyValues_;
 };
 
 class TilingContext
@@ -405,8 +405,6 @@ public:
         }
         uint32_t index = std::distance(firstParamTypes.begin(), it);
 
-        context->inputDesc_.reserve(inputs_.size());
-        context->outputDesc_.reserve(outputs_.size());
         for (auto &input : inputs_) {
             auto tensorDesc = std::make_shared<gert::CompileTimeTensorDesc>();
             tensorDesc->SetDataType(input.second.GetDataType(index));
@@ -422,8 +420,6 @@ public:
         }
 
         auto runtimeAttrs = std::make_shared<RuntimeAttrs>();
-        runtimeAttrs->values.reserve(attrs_.size());
-        runtimeAttrs->strValues.reserve(attrs_.size());
         for (auto &attr : attrs_) {
             if (attr.second.IsString()) {
                 runtimeAttrs->SetStr(attr.second.GetString());
