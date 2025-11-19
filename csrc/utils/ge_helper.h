@@ -217,24 +217,6 @@ private:
     std::vector<std::any> values;
 };
 
-gert::StorageShape CreateStorageShape(const std::vector<int64_t>& origin, 
-                                 const std::vector<int64_t>& storage) {
-    
-    if (origin.size() > 4 || origin.size() != storage.size()) {
-        throw std::invalid_argument("Unsupported vector size");
-    }
-    switch (origin.size()) {
-        case 0: return gert::StorageShape({}, {});
-        case 1: return gert::StorageShape({origin[0]}, {storage[0]});
-        case 2: return gert::StorageShape({origin[0], origin[1]}, {storage[0], storage[1]});
-        case 3: return gert::StorageShape({origin[0], origin[1], origin[2]}, 
-                           {storage[0], storage[1], storage[2]});
-        case 4: return gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
-                           {storage[0], storage[1], storage[2], storage[3]});
-    }
-    return gert::StorageShape({}, {});
-}
-
 class TilingContext
 {
 public:
@@ -371,6 +353,23 @@ public:
     gert::TilingData *GetRawTilingData() const = delete;
 
 private:
+    static gert::StorageShape CreateStorageShape(const std::vector<int64_t>& origin, 
+                                    const std::vector<int64_t>& storage) {
+        
+        if (origin.size() > 4 || origin.size() != storage.size()) {
+            throw std::invalid_argument("Unsupported vector size");
+        }
+        switch (origin.size()) {
+            case 0: return gert::StorageShape({}, {});
+            case 1: return gert::StorageShape({origin[0]}, {storage[0]});
+            case 2: return gert::StorageShape({origin[0], origin[1]}, {storage[0], storage[1]});
+            case 3: return gert::StorageShape({origin[0], origin[1], origin[2]}, 
+                            {storage[0], storage[1], storage[2]});
+            case 4: return gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
+                            {storage[0], storage[1], storage[2], storage[3]});
+        }
+        return gert::StorageShape({}, {});
+    }
     // init from user definition
     // input include input and optional input (for adapt aclnn)
     std::vector<std::shared_ptr<gert::CompileTimeTensorDesc>> inputDesc_;
