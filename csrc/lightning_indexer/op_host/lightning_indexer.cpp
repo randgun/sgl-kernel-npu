@@ -11,20 +11,24 @@
 #include "lightning_indexer_def.h"
 #include "aclrtlaunch_lightning_indexer.h"
 
-namespace sglang {
-namespace LIHost {
+namespace sglang:LIHost {
+
 using namespace ge_helper;
 constexpr uint32_t MAX_CAPTURE_NUM = 1024;
 uint32_t actualCaptureNum = 0;
 std::unordered_map<uint32_t, uint32_t> captureMap;
 at::Tensor workspace;
 
+}
 
+namespace sglang {
+namespace npu_kernel {
 HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
                                 const at::Tensor &actual_seq_lengths_q, const at::Tensor &actual_seq_lengths,
                                 const at::Tensor &blocktable, c10::optional<c10::string_view> layout_query,
                                 c10::optional<c10::string_view> layout_key, at::Tensor &sparse_indices)
 {
+    using namespace LIHost;
     LightningIndexer indexer("lightning_indexer");
     auto context = std::make_shared<TilingContext>("lightning_indexer");
     TORCH_CHECK(context != nullptr, "TilingContext is null");
