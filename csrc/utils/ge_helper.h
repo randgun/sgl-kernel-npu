@@ -224,13 +224,13 @@ std::shared_ptr<gert::StorageShape> CreateStorageShape(const std::vector<int64_t
         throw std::invalid_argument("Unsupported vector size");
     }
     switch (origin.size()) {
-        case 0: return std::make_shared<gert::StorageShape>({}, {});
-        case 1: return std::make_shared<gert::StorageShape>({origin[0]}, {storage[0]});
-        case 2: return std::make_shared<gert::StorageShape>({origin[0], origin[1]}, {storage[0], storage[1]});
-        case 3: return std::make_shared<gert::StorageShape>({origin[0], origin[1], origin[2]}, 
-                           {storage[0], storage[1], storage[2]});
-        case 4: return std::make_shared<gert::StorageShape>({origin[0], origin[1], origin[2], origin[3]}, 
-                           {storage[0], storage[1], storage[2], storage[3]});
+        case 0: return std::make_shared<gert::StorageShape>(new gert::StorageShape({}, {}));
+        case 1: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0]}, {storage[0]}));
+        case 2: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0], origin[1]}, {storage[0], storage[1]}));
+        case 3: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0], origin[1], origin[2]}, 
+                           {storage[0], storage[1], storage[2]}));
+        case 4: return std::make_shared<gert::StorageShape>(new gert::StorageShape({origin[0], origin[1], origin[2], origin[3]}, 
+                           {storage[0], storage[1], storage[2], storage[3]}));
     }
 }
 
