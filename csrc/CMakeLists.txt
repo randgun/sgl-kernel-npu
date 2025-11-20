@@ -11,8 +11,8 @@ FILE(GLOB OP_SRCS
     # ${PROJECT_OP_SRC_BASE}/assign_cache_op/op_host/assign_cache.cpp
     # ${PROJECT_OP_SRC_BASE}/build_tree/op_host/build_tree.cpp
     # ${PROJECT_OP_SRC_BASE}/mla_preprocess/op_host/mla_preprocess.cpp
-    # ${PROJECT_OP_SRC_BASE}/batch_matmul_transpose/op_host/batch_matmul_transpose.cpp
-    # ${PROJECT_OP_SRC_BASE}/batch_matmul_transpose/op_host/tiling/tiling_data.cpp
+    ${PROJECT_OP_SRC_BASE}/batch_matmul_transpose/op_host/batch_matmul_transpose.cpp
+    ${PROJECT_OP_SRC_BASE}/batch_matmul_transpose/op_host/tiling/tiling_data.cpp
     # ${PROJECT_OP_SRC_BASE}/transfer_kv_dim_exchange/op_host/transfer_kv_dim_exchange.cpp
     # ${PROJECT_OP_SRC_BASE}/lora/op_host/bgmv_expand.cpp
     # ${PROJECT_OP_SRC_BASE}/lora/op_host/bgmv_shrink.cpp
@@ -26,16 +26,16 @@ FILE(GLOB OP_SRCS
 set(OP_PLUGIN_NAME sgl_kernel_npu)
 
 # kernel side files without workspace
-# ascendc_library(no_workspace_kernel STATIC
+ascendc_library(no_workspace_kernel STATIC
 #     ${PROJECT_OP_SRC_BASE}/helloworld/op_kernel/kernel_helloworld.cpp
 #     ${PROJECT_OP_SRC_BASE}/cache_location_assign/op_kernel/cache_loc_assign_kernel.cpp
 #     ${PROJECT_OP_SRC_BASE}/assign_cache_op/op_kernel/assign_cache_op.cpp
-#     ${PROJECT_OP_SRC_BASE}/batch_matmul_transpose/op_kernel/batch_matmul_transpose_kernel.cpp
+    ${PROJECT_OP_SRC_BASE}/batch_matmul_transpose/op_kernel/batch_matmul_transpose_kernel.cpp
 #     ${PROJECT_OP_SRC_BASE}/lora/op_kernel/bgmv_expand_kernel.cpp
 #     ${PROJECT_OP_SRC_BASE}/lora/op_kernel/bgmv_shrink_kernel.cpp
 #     ${PROJECT_OP_SRC_BASE}/lora/op_kernel/sgmv_expand_kernel.cpp
 #     ${PROJECT_OP_SRC_BASE}/lora/op_kernel/sgmv_shrink_kernel.cpp
-# )
+)
 
 ascendc_library(workspace_kernel STATIC
     # ${PROJECT_OP_SRC_BASE}/mla_preprocess/op_kernel/mla_preprocess_kernel.cpp
@@ -54,7 +54,7 @@ add_library(${OP_PLUGIN_NAME} SHARED ${OP_SRCS})
 
 target_link_libraries(${OP_PLUGIN_NAME} PRIVATE
         workspace_kernel
-        # no_workspace_kernel
+        no_workspace_kernel
         torch_npu
         ascendcl
         tiling_api
