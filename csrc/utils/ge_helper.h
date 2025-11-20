@@ -174,12 +174,12 @@ public:
         return isString_;
     }
 
-    void SetValue(std::any &value)
+    void SetAny(std::any value)
     {
         anyValue_ = value;
     }
 
-    void SetStr(std::string &str)
+    void SetStr(std::string str)
     {
         strValue_ = str;
     }
