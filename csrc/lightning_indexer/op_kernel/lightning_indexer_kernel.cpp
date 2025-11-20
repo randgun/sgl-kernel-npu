@@ -663,7 +663,7 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
     LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::TND, LI_LAYOUT::PA_BSND>> bf16_pa_tnd_pabsnd_op;
 
     auto tilingKey = tilingData->tilingKey >> 8;
-
+    AscendC::printf("tilingKey is %d\n", tilingKey);
     if (tilingKey == 0) {
         half_pa_tnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
                 &tPipe);

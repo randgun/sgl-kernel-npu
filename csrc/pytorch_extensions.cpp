@@ -118,4 +118,10 @@ TORCH_LIBRARY_IMPL(npu, PrivateUse1, m)
 
     m.impl("lightning_indexer", TORCH_FN(sglang::npu_kernel::lightning_indexer));
 }
+
+TORCH_LIBRARY_IMPL(npu, Meta, m) {
+    m.impl("lightning_indexer", TORCH_FN(sglang::npu_kernel::lightning_indexer_meta));
+}
 }  // namespace
+
+

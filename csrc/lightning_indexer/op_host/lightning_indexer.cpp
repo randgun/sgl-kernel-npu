@@ -54,7 +54,7 @@ namespace sglang {
 namespace npu_kernel {
 HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
                                 const at::Tensor &actual_seq_lengths_query, const at::Tensor &actual_seq_lengths_key,
-                                const at::Tensor &blocktable, c10::string_view layout_query,
+                                const at::Tensor &block_table, c10::string_view layout_query,
                                 c10::string_view layout_key, int64_t sparse_count, int64_t sparse_mode)
 {
     using namespace LIHost;
@@ -81,7 +81,7 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     context->RegisterTensor(weights, true);
     context->RegisterTensor(actual_seq_lengths_query, true);
     context->RegisterTensor(actual_seq_lengths_key, true);
-    context->RegisterTensor(blocktable, true);
+    context->RegisterTensor(block_table, true);
     context->RegisterTensor(sparse_indices, false);
     std::cout << "3" << std::endl;
 
@@ -116,9 +116,23 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     workspace =
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
     std::cout << "6" << std::endl;
-    EXEC_KERNEL_CMD(lightning_indexer, blockDim, query, key, weights, actual_seq_lengths_query, actual_seq_lengths_key, blocktable,
+    EXEC_KERNEL_CMD(lightning_indexer, blockDim, query, key, weights, actual_seq_lengths_query, actual_seq_lengths_key, block_table,
                     sparse_indices, workspace, tilingTensor);
     return sparse_indices;
+}
+
+HOST_API at::Tensor lightning_indexer_meta(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
+                                const at::Tensor &actual_seq_lengths_query, const at::Tensor &actual_seq_lengths_key,
+                                const at::Tensor &block_table, c10::string_view layout_query,
+                                c10::string_view layout_key, int64_t sparse_count, int64_t sparse_mode)
+{
+    std::string query_layout_str = std::string(layout_query);
+    std::string key_layout_str = std::string(layout_key);   
+    // construct the output tensor
+    at::Tensor lightning_indexer_output = LIHost::ConstructLightningIndexerOutputTensor(
+            query, key, actual_seq_lengths_query, sparse_count, query_layout_str, key_layout_str);
+
+    return lightning_indexer_output;
 }
 }  // namespace LIHost
 }  // namespace sglang
