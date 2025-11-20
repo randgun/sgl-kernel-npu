@@ -402,7 +402,7 @@ public:
         return outputs_.back().second;
     }
 
-    void SetAttrStr(const std::string attrName, std::string &strVal)
+    void SetAttrStr(const std::string attrName, std::string strVal)
     {
         for (auto &pair : attrs_) {
             if (pair.first == attrName) {
@@ -413,7 +413,7 @@ public:
         throw std::runtime_error("SetAttrStr failed, attrName not exists");
     }
 
-    void SetAttrAny(const std::string attrName, std::any &anyVal)
+    void SetAttrAny(const std::string attrName, std::any anyVal)
     {
         for (auto &pair : attrs_) {
             if (pair.first == attrName) {

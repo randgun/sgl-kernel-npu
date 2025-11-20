@@ -60,12 +60,14 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     using namespace LIHost;
     std::cout << "0" << std::endl;
     LightningIndexer indexer("lightning_indexer");
-    indexer.SetAttrStr("layout_query", layout_query.str());
-    indexer.SetAttrStr("layout_key", layout_key.str());
+    std::string layoutQuery(layout_query.data(), layout_query.size());
+    std::string layoutKey(layout_key.data(), layout_key.size());
+    indexer.SetAttrStr("layout_query", layoutQuery);
+    indexer.SetAttrStr("layout_key", layoutKey);
     indexer.SetAttrAny("sparse_count", sparse_count);
     indexer.SetAttrAny("sparse_mode", sparse_mode);
 
-    at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_q, sparse_count, layout_query.str(), layout_key.str());
+    at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_q, sparse_count, layoutQuery, layoutKey);
 
     auto context = std::make_shared<TilingContext>("lightning_indexer");
     TORCH_CHECK(context != nullptr, "TilingContext is null");
