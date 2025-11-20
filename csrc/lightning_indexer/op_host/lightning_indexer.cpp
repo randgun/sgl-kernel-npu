@@ -15,6 +15,14 @@ namespace sglang::LIHost {
 
 using namespace ge_helper;
 constexpr uint32_t MAX_CAPTURE_NUM = 1024;
+// npu tensor max size
+constexpr int SIZE = 8;
+constexpr int DIM_0 = 0;
+constexpr int DIM_1 = 1;
+constexpr int DIM_2 = 2;
+constexpr int DIM_3 = 3;
+
+// namespace scope global parameters
 uint32_t actualCaptureNum = 0;
 std::unordered_map<uint32_t, uint32_t> captureMap;
 at::Tensor workspace;
@@ -52,12 +60,12 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     using namespace LIHost;
     std::cout << "0" << std::endl;
     LightningIndexer indexer("lightning_indexer");
-    indexer.SetAttrStr("layout_query", layout_query);
-    indexer.SetAttrStr("layout_key", layout_key);
+    indexer.SetAttrStr("layout_query", layout_query.to_string());
+    indexer.SetAttrStr("layout_key", layout_key.to_string());
     indexer.SetAttrAny("sparse_count", sparse_count);
     indexer.SetAttrAny("sparse_mode", sparse_mode);
 
-    at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_q, sparse_count, layout_query, layout_key);
+    at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_q, sparse_count, layout_query.to_string(), layout_key.to_string());
 
     auto context = std::make_shared<TilingContext>("lightning_indexer");
     TORCH_CHECK(context != nullptr, "TilingContext is null");

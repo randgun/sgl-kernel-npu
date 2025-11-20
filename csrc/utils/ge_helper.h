@@ -402,22 +402,22 @@ public:
         return outputs_.back().second;
     }
 
-    void SetAttrStr(std::string &attrName, std::string &strVal)
+    void SetAttrStr(const std::string attrName, std::string &strVal)
     {
         for (auto &pair : attrs_) {
             if (pair.first == attrName) {
-                attr.second.SetStr(strVal);
+                pair.second.SetStr(strVal);
                 return;
             }
         }
         throw std::runtime_error("SetAttrStr failed, attrName not exists");
     }
 
-    void SetAttrAny(std::string &attrName, std::any &anyVal)
+    void SetAttrAny(const std::string attrName, std::any &anyVal)
     {
         for (auto &pair : attrs_) {
             if (pair.first == attrName) {
-                attr.second.SetAny(anyVal);
+                pair.second.SetAny(anyVal);
                 return;
             }
         }
