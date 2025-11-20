@@ -82,7 +82,7 @@ TORCH_LIBRARY_FRAGMENT(npu, m)
     m.def(
         "lightning_indexer(Tensor! query, Tensor! key, Tensor! weights, Tensor! actual_seq_lengths_q, "
         "Tensor! actual_seq_lengths, Tensor! blocktable, "
-        "str? layout_query=None, str? layout_key=None, "
+        "str? layout_query, str? layout_key, "
         "Tensor(a!) sparse_indices) -> ()");
 }
 }  // namespace
