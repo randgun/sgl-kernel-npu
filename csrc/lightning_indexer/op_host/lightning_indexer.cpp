@@ -55,7 +55,7 @@ namespace npu_kernel {
 HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
                                 const at::Tensor &actual_seq_lengths_query, const at::Tensor &actual_seq_lengths_key,
                                 const at::Tensor &blocktable, c10::string_view layout_query,
-                                c10::string_view layout_key, int32_t sparse_count, int32_t sparse_mode)
+                                c10::string_view layout_key, int64_t sparse_count, int64_t sparse_mode)
 {
     using namespace LIHost;
     std::cout << "0" << std::endl;
@@ -64,8 +64,8 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     std::string layoutKey(layout_key.data(), layout_key.size());
     indexer.SetAttrStr("layout_query", layoutQuery);
     indexer.SetAttrStr("layout_key", layoutKey);
-    indexer.SetAttrAny("sparse_count", sparse_count);
-    indexer.SetAttrAny("sparse_mode", sparse_mode);
+    indexer.SetAttrAny("sparse_count", static_cast<int32_t>(sparse_count));
+    indexer.SetAttrAny("sparse_mode", static_cast<int32_t>(sparse_mode));
 
     at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_query, sparse_count, layoutQuery, layoutKey);
 
