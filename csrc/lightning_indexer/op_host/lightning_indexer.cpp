@@ -29,13 +29,15 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
                                 c10::optional<c10::string_view> layout_key, at::Tensor &sparse_indices)
 {
     using namespace LIHost;
+    std::cout << "0" << std::endl;
     LightningIndexer indexer("lightning_indexer");
     auto context = std::make_shared<TilingContext>("lightning_indexer");
     TORCH_CHECK(context != nullptr, "TilingContext is null");
 
     auto qScalarType = query.scalar_type();
+    std::cout << "1" << std::endl;
     indexer.SetToContext(context, qScalarType);
-
+    std::cout << "2" << std::endl;
     context->RegisterTensor(query, true);
     context->RegisterTensor(key, true);
     context->RegisterTensor(weights, true);
@@ -43,13 +45,16 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
     context->RegisterTensor(actual_seq_lengths, true);
     context->RegisterTensor(blocktable, true);
     context->RegisterTensor(sparse_indices, false);
+    std::cout << "3" << std::endl;
 
     LITilingInfo liInfo;
     LIInfoParser LIInfoParser(context.get());
+    std::cout << "4" << std::endl;
     TORCH_CHECK(LIInfoParser.ParseAndCheck(liInfo) == ge::GRAPH_SUCCESS, "lightning_indexer ParseAndCheck failed")
 
     LightningIndexerTiling liTiling(context.get());
     liTiling.DoTiling(&liInfo);
+    std::cout << "5" << std::endl;
     const auto &tilingData = liTiling.GetTilingData();
 
     uint32_t tilingSize = sizeof(LITilingData);
