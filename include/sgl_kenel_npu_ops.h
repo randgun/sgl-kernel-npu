@@ -99,6 +99,16 @@ at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor &key,
                        int64_t sparse_count,
                        int64_t sparse_mode);
 
+at::Tensor lightning_indexer_meta(const at::Tensor &query, const at::Tensor &key,
+                       const at::Tensor &weights,
+                       const at::Tensor &actual_seq_lengths_query,
+                       const at::Tensor &actual_seq_lengths_key,
+                       const at::Tensor &block_table,
+                       c10::string_view layout_query,
+                       c10::string_view layout_key,
+                       int64_t sparse_count,
+                       int64_t sparse_mode);
+
 } // namespace npu_kernel
 
 } // namespace sglang
