@@ -436,7 +436,7 @@ public:
 
     void SetToContext(std::shared_ptr<TilingContext> &context, at::ScalarType &scalarType)
     {
-        auto geType = MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalarType);
+        auto geType = SCALAR_TYPE_TO_GE_DATATYPE(scalarType);
         if (inputs_.empty()) {
             throw std::runtime_error("Check the op definition file");
         }
