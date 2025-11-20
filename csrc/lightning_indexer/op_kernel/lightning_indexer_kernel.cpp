@@ -667,7 +667,7 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
     auto tilingKey = tilingData->tilingKey;
     AscendC::printf("tilingKey is %d\n", tilingKey);
     switch (tilingKey) {
-        case 0xcfcf3112:
+        case 0x0c0c3112:
             half_pa_tnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
                     &tPipe);
             half_pa_tnd_pabsnd_op.Process();
@@ -677,7 +677,7 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
                     &tPipe);
             bf16_pa_tnd_pabsnd_op.Process();
             break;
-        case 0xcfcf3102:
+        case 0x0c0c3102:
             half_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
                     &tPipe);
             half_pa_bsnd_pabsnd_op.Process();

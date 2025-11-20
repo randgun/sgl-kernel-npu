@@ -7,9 +7,9 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "torch_helper.h"
 
-#define MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalar_type)                                                                    \
-    [&]() {                                                                                                            \
-        switch (scalar_type) {                                                                                         \
+#define MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalarType)                                                                    \
+    [&scalarType]() {                                                                                                            \
+        switch (scalarType) {                                                                                         \
             case at::ScalarType::Float:                                                                                \
                 return ge::DT_FLOAT;                                                                                   \
             case at::ScalarType::Half:                                                                                 \
@@ -37,8 +37,42 @@
             case at::ScalarType::BFloat16:                                                                             \
                 return ge::DT_BF16;                                                                                    \
             default:                                                                                                   \
-                throw std::runtime_error("Unsupported scalar type: " + std::to_string(static_cast<int>(scalar_type))); \
+                throw std::runtime_error("Unsupported scalar type: " + std::to_string(static_cast<int>(scalarType))); \
         }                                                                                                              \
+    }()
+
+#define GE_DATATYPE_TO_KEY(geDatatype) \
+    [&geDatatype]() { \
+        switch (geDatatype) { \
+            case ge::DT_FLOAT: \
+                return 0; \
+            case ge::DT_FLOAT16: \
+                return 1; \
+            case ge::DT_INT8: \
+                return 2; \
+            case ge::DT_INT32: \
+                return 3; \
+            case ge::DT_UINT8: \
+                return 4; \
+            case ge::DT_INT16: \
+                return 5; \
+            case ge::DT_UINT16: \
+                return 6; \
+            case ge::DT_UINT32: \
+                return 7; \
+            case ge::DT_INT64: \
+                return 8; \
+            case ge::DT_UINT64: \
+                return 9; \
+            case ge::DT_DOUBLE: \
+                return 10; \
+            case ge::DT_BOOL: \
+                return 11; \
+            case ge::DT_BF16: \
+                return 12; \
+            default: \
+                throw std::runtime_error("Unsupported GE data type: " + std::to_string(static_cast<int>(geDatatype))); \
+        } \
     }()
 namespace sglang {
 namespace ge_helper {
