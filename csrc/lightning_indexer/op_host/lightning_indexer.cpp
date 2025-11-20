@@ -19,18 +19,46 @@ uint32_t actualCaptureNum = 0;
 std::unordered_map<uint32_t, uint32_t> captureMap;
 at::Tensor workspace;
 
+inline at::Tensor ConstructLightningIndexerOutputTensor(const at::Tensor& query, const at::Tensor& key,
+    const c10::optional<at::Tensor> &actual_seq_lengths_query, int64_t sparse_count, std::string query_layout_str, std::string key_layout_str)
+{
+    at::SmallVector<int64_t, SIZE> outputSize;
+    for (size_t i = 0; i < query.sizes().size(); i++) {
+        TORCH_CHECK(query.size(i) > 0, "All values within query's shape should be greater "
+            "than 0, but shape[", i, "] is ", query.size(i));
+    }
+    TORCH_CHECK(sparse_count > 0, "sparse count should be greater than 0, but now is ", sparse_count);
+    
+    if (query_layout_str == "BSND") {
+        outputSize = {query.size(DIM_0), query.size(DIM_1), key.size(DIM_2), sparse_count};
+    } else {
+        int n_dim_index = 0;
+        n_dim_index = (key_layout_str == "TND") ? DIM_1 : DIM_2;
+        outputSize = {query.size(DIM_0), key.size(n_dim_index), sparse_count};       
+    }
+    at::Tensor output = at::empty(outputSize, query.options().dtype(at::kInt));
+
+    return output;
+}
 }
 
 namespace sglang {
 namespace npu_kernel {
-HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
+HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
                                 const at::Tensor &actual_seq_lengths_q, const at::Tensor &actual_seq_lengths,
-                                const at::Tensor &blocktable, c10::optional<c10::string_view> layout_query,
-                                c10::optional<c10::string_view> layout_key, at::Tensor &sparse_indices)
+                                const at::Tensor &blocktable, c10::string_view layout_query,
+                                c10::string_view layout_key, int64_t sparse_count, int64_t sparse_mode)
 {
     using namespace LIHost;
     std::cout << "0" << std::endl;
     LightningIndexer indexer("lightning_indexer");
+    indexer.SetAttrStr("layout_query", layout_query);
+    indexer.SetAttrStr("layout_key", layout_key);
+    indexer.SetAttrAny("sparse_count", sparse_count);
+    indexer.SetAttrAny("sparse_mode", sparse_mode);
+
+    at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_q, sparse_count, layout_query, layout_key);
+
     auto context = std::make_shared<TilingContext>("lightning_indexer");
     TORCH_CHECK(context != nullptr, "TilingContext is null");
 
@@ -79,6 +107,7 @@ HOST_API void lightning_indexer(const at::Tensor &query, const at::Tensor &key, 
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
     EXEC_KERNEL_CMD(lightning_indexer, blockDim, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
                     sparse_indices, workspace, tilingTensor);
+    return sparse_indices;
 }
 }  // namespace LIHost
 }  // namespace sglang

@@ -174,6 +174,16 @@ public:
         return isString_;
     }
 
+    void SetValue(std::any &value)
+    {
+        anyValue_ = value;
+    }
+
+    void SetStr(std::string &str)
+    {
+        strValue_ = str;
+    }
+
 private:
     AttrTypeCls attrType_;      // REQUIRED or OPTIONAL
     std::any anyValue_;  // need C++17
@@ -187,12 +197,12 @@ class RuntimeAttrs
 public:
     RuntimeAttrs() = default;
 
-    void SetStr(const std::string &value)
+    void AddStr(const std::string &value)
     {
         strValues_.push_back(value);
     }
 
-    void SetAny(const std::any &value)
+    void AddAny(const std::any &value)
     {
         anyValues_.push_back(value);
     }
@@ -392,6 +402,28 @@ public:
         return outputs_.back().second;
     }
 
+    void SetAttrStr(std::string &attrName, std::string &strVal)
+    {
+        for (auto &pair : attrs_) {
+            if (pair.first == attrName) {
+                attr.second.SetStr(strVal);
+                return;
+            }
+        }
+        throw std::runtime_error("SetAttrStr failed, attrName not exists");
+    }
+
+    void SetAttrAny(std::string &attrName, std::any &anyVal)
+    {
+        for (auto &pair : attrs_) {
+            if (pair.first == attrName) {
+                attr.second.SetAny(anyVal);
+                return;
+            }
+        }
+        throw std::runtime_error("SetAttrAny failed, attrName not exists");
+    }
+
     void SetToContext(std::shared_ptr<TilingContext> &context, at::ScalarType &scalarType)
     {
         auto geType = MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalarType);
@@ -422,11 +454,11 @@ public:
         auto runtimeAttrs = std::make_shared<RuntimeAttrs>();
         for (auto &attr : attrs_) {
             if (attr.second.IsString()) {
-                runtimeAttrs->SetStr(attr.second.GetString());
-                runtimeAttrs->SetAny(std::any{});
+                runtimeAttrs->AddStr(attr.second.GetString());
+                runtimeAttrs->AddAny(std::any{});
             } else {
-                runtimeAttrs->SetAny(attr.second.GetValue());
-                runtimeAttrs->SetStr("");
+                runtimeAttrs->AddAny(attr.second.GetValue());
+                runtimeAttrs->AddStr("");
             }
         }
         context->SetAttrs(runtimeAttrs);
