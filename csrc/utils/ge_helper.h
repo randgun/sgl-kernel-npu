@@ -7,41 +7,29 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "torch_helper.h"
 
-#define MAP_SCALAR_TYPE_TO_GE_DATATYPE(scalarType)                                                                    \
-    [&scalarType]() {                                                                                                            \
-        switch (scalarType) {                                                                                         \
-            case at::ScalarType::Float:                                                                                \
-                return ge::DT_FLOAT;                                                                                   \
-            case at::ScalarType::Half:                                                                                 \
-                return ge::DT_FLOAT16;                                                                                 \
-            case at::ScalarType::Char:                                                                                 \
-                return ge::DT_INT8;                                                                                    \
-            case at::ScalarType::Int:                                                                                  \
-                return ge::DT_INT32;                                                                                   \
-            case at::ScalarType::Byte:                                                                                 \
-                return ge::DT_UINT8;                                                                                   \
-            case at::ScalarType::Short:                                                                                \
-                return ge::DT_INT16;                                                                                   \
-            case at::ScalarType::UInt16:                                                                               \
-                return ge::DT_UINT16;                                                                                  \
-            case at::ScalarType::UInt32:                                                                               \
-                return ge::DT_UINT32;                                                                                  \
-            case at::ScalarType::Long:                                                                                 \
-                return ge::DT_INT64;                                                                                   \
-            case at::ScalarType::UInt64:                                                                               \
-                return ge::DT_UINT64;                                                                                  \
-            case at::ScalarType::Double:                                                                               \
-                return ge::DT_DOUBLE;                                                                                  \
-            case at::ScalarType::Bool:                                                                                 \
-                return ge::DT_BOOL;                                                                                    \
-            case at::ScalarType::BFloat16:                                                                             \
-                return ge::DT_BF16;                                                                                    \
-            default:                                                                                                   \
-                throw std::runtime_error("Unsupported scalar type: " + std::to_string(static_cast<int>(scalarType))); \
-        }                                                                                                              \
-    }()
+#include <stdexcept>
 
-constexpr int GE_DATATYPE_TO_KEY(ge::DataType geDatatype)
+constexpr ge::DataType SCALAR_TYPE_TO_GE_DATATYPE(at::ScalarType scalarType) {
+    switch (scalarType) {
+        case at::ScalarType::Float:    return ge::DT_FLOAT;
+        case at::ScalarType::Half:     return ge::DT_FLOAT16;
+        case at::ScalarType::Char:     return ge::DT_INT8;
+        case at::ScalarType::Int:      return ge::DT_INT32;
+        case at::ScalarType::Byte:     return ge::DT_UINT8;
+        case at::ScalarType::Short:    return ge::DT_INT16;
+        case at::ScalarType::UInt16:   return ge::DT_UINT16;
+        case at::ScalarType::UInt32:   return ge::DT_UINT32;
+        case at::ScalarType::Long:     return ge::DT_INT64;
+        case at::ScalarType::UInt64:   return ge::DT_UINT64;
+        case at::ScalarType::Double:   return ge::DT_DOUBLE;
+        case at::ScalarType::Bool:     return ge::DT_BOOL;
+        case at::ScalarType::BFloat16: return ge::DT_BF16;
+        default:
+            throw std::runtime_error("Unsupported scalar type");
+    }
+}
+
+constexpr uint32_t GE_DATATYPE_TO_KEY(ge::DataType geDatatype)
 {
     switch (geDatatype) {
         case ge::DT_FLOAT:    return 0;
