@@ -116,8 +116,8 @@ ge::graphStatus LIInfoParser::GetAndCheckAttrParaInfo()
     // OPS_LOG_I(context_->GetNodeName(), "GetAndCheckAttrParaInfo start");
     opParamInfo_.layOut = attrs->GetStr(ATTR_QUERY_LAYOUT_INDEX);
     opParamInfo_.layOutKey = attrs->GetStr(ATTR_KEY_LAYOUT_INDEX);
-    opParamInfo_.sparseCount = attrs->GetAttrPointer<int64_t>(ATTR_SPARSE_COUNT_INDEX);
-    opParamInfo_.sparseMode = attrs->GetAttrPointer<int64_t>(ATTR_SPARSE_MODE_INDEX);
+    opParamInfo_.sparseCount = attrs->GetAttrPointer<int32_t>(ATTR_SPARSE_COUNT_INDEX);
+    opParamInfo_.sparseMode = attrs->GetAttrPointer<int32_t>(ATTR_SPARSE_MODE_INDEX);
 
     // if (opParamInfo_.layOut != nullptr) {
     //     OPS_LOG_I(context_->GetNodeName(), "layout_query is:%s", opParamInfo_.layOut);
