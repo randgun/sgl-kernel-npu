@@ -80,8 +80,8 @@ TORCH_LIBRARY_FRAGMENT(npu, m)
     //     "sgmv_shrink(Tensor! x, Tensor! weight, Tensor! lora_indices, Tensor! seq_len, Tensor! y, float scale) -> ()");
 
     m.def(
-        "lightning_indexer(Tensor query, Tensor key, Tensor weights, Tensor actual_seq_lengths_q, "
-        "Tensor actual_seq_lengths, Tensor blocktable, "
+        "lightning_indexer(Tensor query, Tensor key, Tensor weights, Tensor actual_seq_lengths_query, "
+        "Tensor actual_seq_lengths_key, Tensor block_table, "
         "str layout_query, str layout_key, "
         "int sparse_count, int sparse_mode) -> Tensor");
 }

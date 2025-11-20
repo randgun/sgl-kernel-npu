@@ -53,7 +53,7 @@ inline at::Tensor ConstructLightningIndexerOutputTensor(const at::Tensor& query,
 namespace sglang {
 namespace npu_kernel {
 HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor &key, const at::Tensor &weights,
-                                const at::Tensor &actual_seq_lengths_q, const at::Tensor &actual_seq_lengths,
+                                const at::Tensor &actual_seq_lengths_query, const at::Tensor &actual_seq_lengths_key,
                                 const at::Tensor &blocktable, c10::string_view layout_query,
                                 c10::string_view layout_key, int64_t sparse_count, int64_t sparse_mode)
 {
@@ -67,7 +67,7 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     indexer.SetAttrAny("sparse_count", sparse_count);
     indexer.SetAttrAny("sparse_mode", sparse_mode);
 
-    at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_q, sparse_count, layoutQuery, layoutKey);
+    at::Tensor sparse_indices = ConstructLightningIndexerOutputTensor(query, key, actual_seq_lengths_query, sparse_count, layoutQuery, layoutKey);
 
     auto context = std::make_shared<TilingContext>("lightning_indexer");
     TORCH_CHECK(context != nullptr, "TilingContext is null");
@@ -79,8 +79,8 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     context->RegisterTensor(query, true);
     context->RegisterTensor(key, true);
     context->RegisterTensor(weights, true);
-    context->RegisterTensor(actual_seq_lengths_q, true);
-    context->RegisterTensor(actual_seq_lengths, true);
+    context->RegisterTensor(actual_seq_lengths_query, true);
+    context->RegisterTensor(actual_seq_lengths_key, true);
     context->RegisterTensor(blocktable, true);
     context->RegisterTensor(sparse_indices, false);
     std::cout << "3" << std::endl;
@@ -115,7 +115,8 @@ HOST_API at::Tensor lightning_indexer(const at::Tensor &query, const at::Tensor 
     size_t userWorkspaceSize = *context->GetWorkspaceSizes(1);
     workspace =
         at::empty({userWorkspaceSize}, at::TensorOptions().dtype(at::kByte).device(query.options().device()));
-    EXEC_KERNEL_CMD(lightning_indexer, blockDim, query, key, weights, actual_seq_lengths_q, actual_seq_lengths, blocktable,
+    std::cout << "6" << std::endl;
+    EXEC_KERNEL_CMD(lightning_indexer, blockDim, query, key, weights, actual_seq_lengths_query, actual_seq_lengths_key, blocktable,
                     sparse_indices, workspace, tilingTensor);
     return sparse_indices;
 }
