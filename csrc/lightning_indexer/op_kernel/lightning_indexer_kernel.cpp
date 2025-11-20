@@ -664,6 +664,7 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
     LIPreload<LIType<half, half, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> half_pa_bsnd_pabsnd_op;
     LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> bf16_pa_bsnd_pabsnd_op;
 
+    auto tilingKey = tilingData->tilingKey;
     AscendC::printf("tilingKey is %d\n", tilingKey);
     switch (tilingKey) {
         case 0xcfcf3112:
