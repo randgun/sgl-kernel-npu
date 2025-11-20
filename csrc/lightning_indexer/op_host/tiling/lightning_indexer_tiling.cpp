@@ -590,8 +590,8 @@ ge::graphStatus LightningIndexerTiling::DoTiling(LITilingInfo *tilingInfo)
     uint32_t pageAttentionFlag = static_cast<uint32_t>(tilingInfo->pageAttentionFlag);
     uint32_t inputQLayout = static_cast<uint32_t>(tilingInfo->inputQLayout);
     uint32_t inputKLayout = static_cast<uint32_t>(tilingInfo->inputKLayout);
-    uint32_t tilingKey = (inputQType << 28) | (inputKType << 24) | (outputType << 20) | (pageAttentionFlag << 16) |
-                         (inputQLayout << 12) | (inputKLayout << 8);
+    uint32_t tilingKey = (inputQType << 24) | (inputKType << 16) | (outputType << 12) | (pageAttentionFlag << 8) |
+                         (inputQLayout << 4) | inputKLayout;
 
     // -------------set tilingdata-----------------
     LITilingData tilingData = {

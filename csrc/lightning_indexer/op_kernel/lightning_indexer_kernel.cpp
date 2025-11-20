@@ -661,16 +661,30 @@ __global__ __aicore__ void lightning_indexer(GM_ADDR query, GM_ADDR key, GM_ADDR
 
     LIPreload<LIType<half, half, int32_t, true, LI_LAYOUT::TND, LI_LAYOUT::PA_BSND>> half_pa_tnd_pabsnd_op;
     LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::TND, LI_LAYOUT::PA_BSND>> bf16_pa_tnd_pabsnd_op;
+    LIPreload<LIType<half, half, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> half_pa_bsnd_pabsnd_op;
+    LIPreload<LIType<bfloat16_t, bfloat16_t, int32_t, true, LI_LAYOUT::BSND, LI_LAYOUT::PA_BSND>> bf16_pa_bsnd_pabsnd_op;
 
-    auto tilingKey = tilingData->tilingKey >> 8;
     AscendC::printf("tilingKey is %d\n", tilingKey);
-    if (tilingKey == 0) {
-        half_pa_tnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
-                &tPipe);
-        half_pa_tnd_pabsnd_op.Process();
-    } else {
-        bf16_pa_tnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
-                &tPipe);
-        bf16_pa_tnd_pabsnd_op.Process();
+    switch (tilingKey) {
+        case 0xcfcf3112:
+            half_pa_tnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
+                    &tPipe);
+            half_pa_tnd_pabsnd_op.Process();
+            break;
+        case 0x01013112:
+            bf16_pa_tnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
+                    &tPipe);
+            bf16_pa_tnd_pabsnd_op.Process();
+            break;
+        case 0xcfcf3102:
+            half_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
+                    &tPipe);
+            half_pa_bsnd_pabsnd_op.Process();
+            break;
+        case 0x01013102:
+            bf16_pa_bsnd_pabsnd_op.Init(query, key, weights, actualSeqLengthsQ, actualSeqLengths, blocktable, sparseIndices, userWorkspace, tilingData,
+                    &tPipe);
+            bf16_pa_bsnd_pabsnd_op.Process();
+            break;
     }
 }
