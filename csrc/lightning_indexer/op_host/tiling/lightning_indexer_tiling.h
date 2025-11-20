@@ -20,10 +20,10 @@
 // #include "exe_graph/runtime/tiling_context.h"
 #include "register/op_def_registry.h"
 #include "register/tilingdata_base.h"
+#include "tiling/platform/platform_ascendc.h"
 #include "tiling/tiling_api.h"
 #include "lightning_tiling_data.h"
 #include "ge_helper.h"
-#include "platform/platform_info.h"
 
 namespace sglang::LIHost {
 // ------------------公共定义--------------------------
