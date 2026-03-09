@@ -85,8 +85,11 @@ def rmsnorm_bias(
 ):
     _, num_vectorcore = get_device_properties()
 
-    batch_size = input.shape[0]
-    hidden_size = input.shape[1]
+    origin_shape = input.shape
+    reshaped_input = input.view(-1, origin_shape[-1])
+
+    batch_size = reshaped_input.shape[0]
+    hidden_size = reshaped_input.shape[1]
     BLOCK_SIZE = triton.next_power_of_2(hidden_size)
     COL_BLOCK_SIZE = 1024  # 1280 # 1728
     n_rows = min(batch_size, num_vectorcore)
@@ -102,7 +105,7 @@ def rmsnorm_bias(
         )
 
     rmsnorm_bias_kernel[(n_rows,)](
-        input,
+        reshaped_input,
         norm_weight,
         norm_bias,
         quant_scale,
@@ -116,4 +119,4 @@ def rmsnorm_bias(
         SCALE,
     )
 
-    return output
+    return output.view(origin_shape)
