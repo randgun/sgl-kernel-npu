@@ -1,6 +1,6 @@
 # compressor_v2
 
-目标为 **CANN 9.2.0 / A3（arch22）**，接入 experimental CompressorV2。
+目标为 **CANN 9.2.0 / A3（arch22）与 A5（arch35）**，接入 experimental CompressorV2。
 `auto` 与 `cann_ops_transformers_cann920` 是同一包内后端，不自动回退。
 
 上游原始文档: [CompressorV2 Torch API](https://gitcode.com/cann/ops-transformer/blob/e7da18105f08b06e01ef0fff78f439098d483746/experimental/attention/compressor_v2/docs/torchapi_compressor.md).
@@ -9,7 +9,7 @@
 
 | 实现 | arch22 | arch35 |
 | --- | --- | --- |
-| `cann_ops_transformers_cann920` / `auto` | 支持 | 不支持 |
+| `cann_ops_transformers_cann920` / `auto` | 支持 | 支持 |
 | `torch_native` | 支持 | 支持 |
 
 ## 函数原型
